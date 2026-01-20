@@ -1,0 +1,14 @@
+[Unit]
+Description=NodeJS Fitness Tracker App
+After=network.target
+ 
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/nodeapps/2025/project3/t9
+ExecStart=npm run start
+Restart=on-failure
+ 
+[Install]
+WantedBy=multi-user.target
+
