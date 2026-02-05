@@ -1,8 +1,8 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance.js"
 
-const position_employee = SequelizeInstance.define("position_employee", {
-    
+const Position_Employee = SequelizeInstance.define("position_employee", {
+
     id_position_employee:{
         type: Sequelize.INTEGER,
         autoIncrement: true,
@@ -19,4 +19,6 @@ const position_employee = SequelizeInstance.define("position_employee", {
         allowNull: false, 
     },
 
-})
+});
+
+export default Position_Employee;
