@@ -5,17 +5,17 @@ const Department = SequelizeInstance.define("department", {
     id_department: {
         type: SequelizeInstance.INTEGER, 
         autoincrement: true,
-        primaryKey: true
+        primaryKey: true,
     },
 
     name: {
         type: SequelizeInstance.STRING,
-        allowNull: false 
+        allowNull: false,
     },
     description: {
         type: SequelizeInstance.STRING,
         allowNull: true,
-        defaultValue: "Student Scheduling System"
+        defaultValue: "Student Scheduling System",
     },
 });
 
