@@ -1,10 +1,10 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance";
 
-const ShiftAssignment = SequelizeInstance.define("shiftassignment", {
+const ShiftAssignment = SequelizeInstance.define("shiftAssignment", {
 
     //Primary Key
-    id_shiftassignment: {
+    id_shiftAssignment: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
