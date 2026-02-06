@@ -1,7 +1,7 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance";
 
-const Task = SequelizeInstance.define("position", {
+const Position = SequelizeInstance.define("position", {
 
     //Primary Key
     id_position: {
@@ -18,7 +18,7 @@ const Task = SequelizeInstance.define("position", {
     avgPayRate:{
         type: Sequelize.STRING,
         allowNull: false,
-        defaultValue: "Short Desciption of task to be completed...",
+        defaultValue: "Short Description of task to be completed...",
     },
     
     id_area: {
@@ -34,4 +34,4 @@ const Task = SequelizeInstance.define("position", {
 
 });
 
-export default Task;
+export default Position;
