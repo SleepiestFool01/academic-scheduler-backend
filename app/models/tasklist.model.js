@@ -1,7 +1,7 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance";
 
-const TaskList = SequelizeInstance.define("tasklist", {
+const TaskList = SequelizeInstance.define("taskList", {
 
     //Primary Key
     id_taskList: {
