@@ -21,8 +21,9 @@ const Swap_Request = SequelizeInstance.define("swap_request", {
 
     status: {
         type: Sequelize.ENUM("Pending", "Approved", "Denied"),
-        defaultValue: "Pending"
-    }
+        defaultValue: "Pending",
+        allowNull: false,
+    },
 
 });
 
