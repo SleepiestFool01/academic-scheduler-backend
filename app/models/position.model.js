@@ -18,7 +18,7 @@ const Position = SequelizeInstance.define("position", {
     avgPayRate:{
         type: Sequelize.STRING,
         allowNull: false,
-        defaultValue: "Short Desciption of task to be completed...",
+        defaultValue: "Short Description of task to be completed...",
     },
 
     id_area: {
