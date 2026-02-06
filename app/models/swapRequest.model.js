@@ -1,10 +1,10 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance";
 
-const Swap_Request = SequelizeInstance.define("swap_request", {
+const SwapRequest = SequelizeInstance.define("swapRequest", {
 
     //Primary Key
-    id_swap_request: {
+    id_swapRequest: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
@@ -14,7 +14,12 @@ const Swap_Request = SequelizeInstance.define("swap_request", {
         allowNull: false,
     },
 
-    id_employee :{
+    id_employeeRequester: { 
+        type: Sequelize.INTEGER,
+        allowNull: false,
+    },
+
+    id_employeeRequested: {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
@@ -27,4 +32,4 @@ const Swap_Request = SequelizeInstance.define("swap_request", {
 
 });
 
-export default Swap_Request;
+export default SwapRequest;

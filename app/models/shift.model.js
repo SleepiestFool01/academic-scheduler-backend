@@ -26,13 +26,18 @@ const Shift = SequelizeInstance.define("shift", {
         defaultValue: "UNDEFINED",
         allowNull: false,
     },
+    
+    date:{
+        type: Sequelize.DATEONLY,
+        allowNull: true,
+    },
 
     startTime:{
         type: Sequelize.TIME,
         allowNull: false,
     },
 
-    EndTime:{
+    endTime:{
         type: Sequelize.TIME,
         allowNull: false,
     },
