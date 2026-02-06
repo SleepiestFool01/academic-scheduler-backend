@@ -1,9 +1,9 @@
 import Sequelize from "sequelize";
 import SequelizeInstance from "../config/sequelizeInstance.js";
 
-const Setting_Value = SequelizeInstance.define("setting_value", {
+const SettingValue = SequelizeInstance.define("settingValue", {
 //Primary Key
-id_setting_value:{
+id_settingValue:{
     type: Sequelize.INTEGER,
     autoIncrement: true,
     primaryKey: true,
@@ -22,4 +22,4 @@ id_department:{
 },
 });
 
-export default Setting_Value;
+export default SettingValue;
