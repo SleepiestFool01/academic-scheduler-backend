@@ -3,17 +3,17 @@ import SequelizeInstance from"../config/sequelizeInstance.js";
 
 const Department = SequelizeInstance.define("department", {
     id_department: {
-        type: SequelizeInstance.INTEGER, 
+        type: Sequelize.INTEGER, 
         autoincrement: true,
         primaryKey: true,
     },
 
     name: {
-        type: SequelizeInstance.STRING,
+        type: Sequelize.STRING,
         allowNull: false,
     },
     description: {
-        type: SequelizeInstance.STRING,
+        type: Sequelize.STRING,
         allowNull: true,
         defaultValue: "Student Scheduling System",
     },
