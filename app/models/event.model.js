@@ -37,4 +37,4 @@ const Event = SequelizeInstance.define("event", {
 
 });
 
-export default Employee;
+export default Event;
