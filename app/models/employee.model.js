@@ -27,6 +27,11 @@ const Employee = SequelizeInstance.define("employee", {
         allowNull: true,
         defaultValue: "Share your goals, experience, or anything your coach should know.",
     },
+    role: {
+        type: Sequelize.ENUM("Employee", "Manager", "Admin"),
+        allowNull: false,
+        defaultValue: "Employee",   
+    }
 
 });
 
