@@ -54,7 +54,7 @@ jobs:
         env:
           NAME: "Root"
         with:
-          hosts: "ubuntu@workerscheduler.eaglesoftwareteam.com"
+          hosts: "ubuntu@workerscheduling.eaglesoftwareteam.com"
           privateKey: ${{ secrets.SERVER_SSH_KEY }}
           debug: false
           command: |
