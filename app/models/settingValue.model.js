@@ -20,6 +20,10 @@ id_department:{
     allowNull: false, 
     foreignKey: true,
 },
+value: {
+    type: Sequelize.STRING,
+    allowNull: false,
+},
 });
 
 export default SettingValue;
