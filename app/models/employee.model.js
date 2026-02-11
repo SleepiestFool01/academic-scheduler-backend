@@ -10,6 +10,12 @@ const Employee = SequelizeInstance.define("employee", {
         primaryKey: true,
     },
 
+    role: {
+        type: Sequelize.ENUM("Employee", "Manager", "Admin"),
+        allowNull: false,
+        defaultValue: "Employee",   
+    },
+
     fName: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -27,7 +33,6 @@ const Employee = SequelizeInstance.define("employee", {
         allowNull: true,
         defaultValue: "Share your goals, experience, or anything your coach should know.",
     },
-
 });
 
 export default Employee;

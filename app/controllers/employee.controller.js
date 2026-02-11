@@ -1,10 +1,10 @@
 import db from "../models/index.js";
 
-const User = db.user;
+const Employee = db.user;
 const Op = db.Sequelize.Op;
 const exports = {};
 
-// Create and Save a new User
+// Create and Save a new Employee
 exports.create = (req, res) => {
   // Validate request
   if (!req.body.fName) {
@@ -14,8 +14,8 @@ exports.create = (req, res) => {
     return;
   }
 
-  // Create a User
-  const user = {
+  // Create a Employee
+  const employee = {
     fName: req.body.fName,
     lName: req.body.lName,
     email: req.body.email,
@@ -24,26 +24,26 @@ exports.create = (req, res) => {
     // expiration_date: req.body.expiration_date
   };
 
-  // Save User in the database
-  User.create(user)
+  // Save Employee in the database
+  Employee.create(employee)
     .then((data) => {
       res.send(data);
     })
     .catch((err) => {
       res.status(500).send({
-        message: err.message || "Some error occurred while creating the User.",
+        message: err.message || "Some error occurred while creating the Employee.",
       });
     });
 };
 
 // Retrieve all People from the database.
 exports.findAll = (req, res) => {
-  const id_user = req.query.id_user;
-  const condition = id_user
-    ? { id_user: { [Op.like]: `%${id_user}%` } }
+  const id_employee = req.query.id_employee;
+  const condition = id_employee
+    ? { id_employee: { [Op.like]: `%${id_employee}%` } }
     : null;
 
-  User.findAll({ where: condition })
+  Employee.findAll({ where: condition })
     .then((data) => {
       res.send(data);
     })
@@ -54,62 +54,62 @@ exports.findAll = (req, res) => {
     });
 };
 
-// Find all users with role = "athlete"
-exports.findAllAthletes = (req, res) => {
+// Find all users with role = "Employee"
+exports.findAllEmployees = (req, res) => {
   db.user
-    .findAll({ where: { role: "athletes" } })
+    .findAll({ where: { role: "Employee" } })
     .then(data => res.send(data))
     .catch(err => {
       res.status(500).send({
-        message: err.message || "Some error occurred while retrieving athletes.",
+        message: err.message || "Some error occurred while retrieving employees.",
       });
     });
 };
 
-exports.createAthlete = (req, res) => {
-  const athlete = {
+exports.createEmployee = (req, res) => {
+  const employee = {
     fName: req.body.fName,
     lName: req.body.lName,
     email: req.body.email,
-    role: "athletes",
+    role: "Employee",
     bio: req.body.bio ?? undefined,
   };
 
-  User.create(athlete)
+  Employee.create(employee)
     .then(data => res.send(data))
     .catch(err => {
       res.status(500).send({
-        message: err.message || "Error creating athlete."
+        message: err.message || "Error creating employee."
       });
     });
 };
 
-// Find a single User with an id
+// Find a single Employee with an id
 exports.findOne = (req, res) => {
-  const id_user = req.params.id_user;
+  const id_employee = req.params.id_employee;
 
-  User.findByPk(id_user)
+  Employee.findByPk(id_employee)
     .then((data) => {
       if (data) {
         res.send(data);
       } else {
         res.status(404).send({
-          message: `Cannot find User with id_user=${id_user}.`,
+          message: `Cannot find Employee with id_employee=${id_employee}.`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error retrieving User with id_user=" + id_user,
+        message: "Error retrieving Employee with id_employee=" + id_employee,
       });
     });
 };
 
-// Find a single User with an email
+// Find a single Employee with an email
 exports.findByEmail = (req, res) => {
   const email = req.params.email;
 
-  User.findOne({
+  Employee.findOne({
     where: {
       email: email,
     },
@@ -120,38 +120,38 @@ exports.findByEmail = (req, res) => {
       } else {
         res.send({ email: "not found" });
         /*res.status(404).send({
-          message: `Cannot find User with email=${email}.`
+          message: `Cannot find Employee with email=${email}.`
         });*/
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error retrieving User with email=" + email,
+        message: "Error retrieving Employee with email=" + email,
       });
     });
 };
 
-// Update a User by the id in the request
+// Update a Employee by the id in the request
 exports.update = (req, res) => {
-  const id_user = req.params.id_user;
+  const id_employee = req.params.id_employee;
 
-  User.update(req.body, {
-    where: { id_user },
+  Employee.update(req.body, {
+    where: { id_employee },
   })
     .then((num) => {
       if (num == 1) {
         res.send({
-          message: "User was updated successfully.",
+          message: "Employee was updated successfully.",
         });
       } else {
         res.send({
-          message: `Cannot update User with id_user=${id_user}. Maybe User was not found or req.body is empty!`,
+          message: `Cannot update Employee with id_employee=${id_employee}. Maybe Employee was not found or req.body is empty!`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error updating User with id_user=" + id_user,
+        message: "Error updating Employee with id_employee=" + id_employee,
       });
     });
 };
@@ -159,61 +159,52 @@ exports.update = (req, res) => {
 console.log("update reached");
 
 exports.updateRole = (req, res) => {
-  const id_user = req.params.id_user;
+  const id_employee = req.params.id_employee;
   const {role} = req.body;
 
-  User.update({ role }, {
-    where: { id_user },
+  Employee.update({ role }, {
+    where: { id_employee },
   })
   .then((num) => {
       if (num == 1) {
         res.send({
-          message: "User was updated successfully.",
+          message: "Employee was updated successfully.",
         });
       } else {
         res.stats(404).send({
-          message: `Cannot update User Role with id_user=${id_user}. User was not found or req.body is empty!`,
+          message: `Cannot update Employee Role with id_employee=${id_employee}. Employee was not found or req.body is empty!`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Error updating User's role with id_user=" + id_user,
+        message: "Error updating Employee's role with id_employee=" + id_employee,
       });
     });
 
 };
 
-
-
-
-
-
-
-
-
-
-// Delete a User with the specified id in the request
+// Delete a Employee with the specified id in the request
 exports.delete = (req, res) => {
-  const id_user = req.params.id_user;
+  const id_employee = req.params.id_employee;
 
-  User.destroy({
-    where: { id_user },
+  Employee.destroy({
+    where: { id_employee },
   })
     .then((num) => {
       if (num == 1) {
         res.send({
-          message: "User was deleted successfully!",
+          message: "Employee was deleted successfully!",
         });
       } else {
         res.send({
-          message: `Cannot delete User with id_user=${id_user}. Maybe User was not found!`,
+          message: `Cannot delete Employee with id_employee=${id_employee}. Maybe Employee was not found!`,
         });
       }
     })
     .catch((err) => {
       res.status(500).send({
-        message: "Could not delete User with id_user=" + id_user,
+        message: "Could not delete Employee with id_employee=" + id_employee,
       });
     });
 };

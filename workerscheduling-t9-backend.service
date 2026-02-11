@@ -1,11 +1,11 @@
 [Unit]
-Description=NodeJS Fitness Tracker App
+Description=NodeJS Worker Scheduling System
 After=network.target
  
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/nodeapps/2025/project3/t9
+WorkingDirectory=/home/ubuntu/nodeapps/sev2026/t9
 ExecStart=npm run start
 Restart=on-failure
  
