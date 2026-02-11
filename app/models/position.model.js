@@ -21,11 +21,6 @@ const Position = SequelizeInstance.define("position", {
         defaultValue: "Short Description of task to be completed...",
     },
 
-    id_area: {
-        type: Sequelize.INTEGER,
-        autoIncrement: true,
-    },
-
     //foreign key
     id_department:{
         type: Sequelize.INTEGER,
