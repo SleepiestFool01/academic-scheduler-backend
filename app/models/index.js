@@ -27,6 +27,7 @@ import User_Metric from "./user_metric.model.js";
 import Team_Lesson from "./team_lesson.model.js";
 import User_Lesson from "./user_lesson.model.js";
 import Task from "./task.model.js";
+import TaskList from "./tasklist.model.js";
 
 
 const db = {};
@@ -49,6 +50,7 @@ db.muscle_group = Muscle_Group;
 db.user_metric = User_Metric;
 db.user_lesson = User_Lesson;
 db.task = Task;
+db.taskList = TaskList;
 
 // =============================
 // TEAM ↔ USER_TEAM association

@@ -8,203 +8,107 @@ const exports = {};
 // Create and Save a new Task
 exports.create = (req, res) => {
   // Validate request
-  if (!req.body.name) {
-    res.status(400).send({
-      message: "Content can not be empty!",
+  if (!req.body.name || !req.body.description || !req.body.id_tasklist) {
+    return res.status(400).send({
+      message: "Missing required fields: name, description, id_tasklist.",
     });
-    return;
   }
 
-  // Create a Task
-  const task = {
-    name: req.body.name,
-    description: req.body.description
-  };
-
   // Save Task in the database
-  Task.create(task)
-    .then((data) => {
-      res.send(data);
-    })
-    .catch((err) => {
+  Task.create(req.body)
+    .then((data) => res.status(201).send(data))
+    .catch((err) => 
       res.status(500).send({
-        message: err.message || "Some error occurred while creating the Task.",
-      });
-    });
+        message: err.message || "Error creating the Task.",
+      })
+    );
 };
 
-// Retrieve all tasks from the database.
+// Retrieve all Tasks.
 exports.findAll = (req, res) => {
-  const id_employee = req.query.id_employee;
-  const condition = id_employee
-    ? { id_employee: { [Op.like]: `%${id_employee}%` } }
-    : null;
-
-  Employee.findAll({ where: condition })
-    .then((data) => {
-      res.send(data);
-    })
-    .catch((err) => {
+  Task.findAll()
+    .then((data) => res.send(data))
+    .catch((err) => 
       res.status(500).send({
-        message: err.message || "Some error occurred while retrieving people.",
-      });
-    });
+        message: err.message || "Error retrieving Tasks.",
+      })
+    );
 };
 
-// Find all users with role = "Employee"
-exports.findAllEmployees = (req, res) => {
-  db.user
-    .findAll({ where: { role: "Employee" } })
+// Retrieve all Tasks for a specific TaskList.
+exports.findAllForTaskList = (req, res) => {
+  Task.findAll({ where: { id_tasklist: req.params.id_tasklist } })
     .then(data => res.send(data))
-    .catch(err => {
+    .catch((err) => 
       res.status(500).send({
-        message: err.message || "Some error occurred while retrieving employees.",
-      });
-    });
+        message: err.message || "Error retrieving Tasks.",
+      })
+    );
 };
 
-exports.createEmployee = (req, res) => {
-  const employee = {
-    fName: req.body.fName,
-    lName: req.body.lName,
-    email: req.body.email,
-    role: "Employee",
-    bio: req.body.bio ?? undefined,
-  };
-
-  Employee.create(employee)
-    .then(data => res.send(data))
-    .catch(err => {
-      res.status(500).send({
-        message: err.message || "Error creating employee."
-      });
-    });
-};
-
-// Find a single Employee with an id
+// Retrieve a single Task.
 exports.findOne = (req, res) => {
-  const id_employee = req.params.id_employee;
-
-  Employee.findByPk(id_employee)
+  Task.findByPk(req.params.id_task)
     .then((data) => {
       if (data) {
         res.send(data);
       } else {
         res.status(404).send({
-          message: `Cannot find Employee with id_employee=${id_employee}.`,
+          message: "Task not found.",
         });
       }
     })
-    .catch((err) => {
+    .catch((err) => 
       res.status(500).send({
-        message: "Error retrieving Employee with id_employee=" + id_employee,
-      });
-    });
+        message: err.message || "Error retrieving specified Task.",
+      })
+    );
 };
 
-// Find a single Employee with an email
-exports.findByEmail = (req, res) => {
-  const email = req.params.email;
-
-  Employee.findOne({
-    where: {
-      email: email,
-    },
-  })
-    .then((data) => {
-      if (data) {
-        res.send(data);
-      } else {
-        res.send({ email: "not found" });
-        /*res.status(404).send({
-          message: `Cannot find Employee with email=${email}.`
-        });*/
-      }
-    })
-    .catch((err) => {
-      res.status(500).send({
-        message: "Error retrieving Employee with email=" + email,
-      });
-    });
-};
-
-// Update a Employee by the id in the request
+// Update a Task.
 exports.update = (req, res) => {
-  const id_employee = req.params.id_employee;
-
-  Employee.update(req.body, {
-    where: { id_employee },
+  Task.update(req.body, {
+    where: { id_task: req.params.id_task },
   })
     .then((num) => {
-      if (num == 1) {
+      if (num === 1) {
         res.send({
-          message: "Employee was updated successfully.",
+          message: "Task was updated successfully.",
         });
       } else {
-        res.send({
-          message: `Cannot update Employee with id_employee=${id_employee}. Maybe Employee was not found or req.body is empty!`,
+        res.status(404).send({
+          message: "Task not found or body empty.",
         });
       }
     })
-    .catch((err) => {
+    .catch((err) => 
       res.status(500).send({
-        message: "Error updating Employee with id_employee=" + id_employee,
-      });
-    });
+        message: err.message || "Error updating Task.",
+      })
+    );
 };
 
-console.log("update reached");
-
-exports.updateRole = (req, res) => {
-  const id_employee = req.params.id_employee;
-  const {role} = req.body;
-
-  Employee.update({ role }, {
-    where: { id_employee },
-  })
-  .then((num) => {
-      if (num == 1) {
-        res.send({
-          message: "Employee was updated successfully.",
-        });
-      } else {
-        res.stats(404).send({
-          message: `Cannot update Employee Role with id_employee=${id_employee}. Employee was not found or req.body is empty!`,
-        });
-      }
-    })
-    .catch((err) => {
-      res.status(500).send({
-        message: "Error updating Employee's role with id_employee=" + id_employee,
-      });
-    });
-
-};
-
-// Delete a Employee with the specified id in the request
+// Delete a Task.
 exports.delete = (req, res) => {
-  const id_employee = req.params.id_employee;
-
-  Employee.destroy({
-    where: { id_employee },
+  Task.destroy({
+    where: { id_task: req.params.id_task },
   })
     .then((num) => {
-      if (num == 1) {
+      if (num === 1) {
         res.send({
-          message: "Employee was deleted successfully!",
+          message: "Task was deleted successfully.",
         });
       } else {
-        res.send({
-          message: `Cannot delete Employee with id_employee=${id_employee}. Maybe Employee was not found!`,
+        res.status(404).send({
+          message: "Task not found.",
         });
       }
     })
-    .catch((err) => {
+    .catch((err) => 
       res.status(500).send({
-        message: "Could not delete Employee with id_employee=" + id_employee,
-      });
-    });
+        message: err.message || "Error deleting Task.",
+      })
+    );
 };
-
 
 export default exports;

@@ -22,9 +22,16 @@ const Task = SequelizeInstance.define("task", {
     //foreign key
     id_tasklist:{
         type: Sequelize.INTEGER,
-        foreignKey: true,
+        allowNull: false,
     },
 
 });
+
+Task.associate = (models) => {
+    Task.belongsTo(models.TaskList, {
+        foreignKey: "id_tasklist",
+        as: "taskList",
+    });
+};
 
 export default Task;
