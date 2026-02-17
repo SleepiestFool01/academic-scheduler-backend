@@ -11,44 +11,46 @@ import { Sequelize } from "sequelize";
 import sequelize from "../config/sequelizeInstance.js";
 
 // Import the models of each table into index. 
-import User from "./user.model.js";
-import Session from "./session.model.js";
-import Lesson from "./lesson.model.js";
-import Exercise from "./exercise.model.js";
-import Player_Goal from "./player_goal.model.js";
-import Team_Goal from "./team_goal.model.js";
-import Player_Goal_Progress from "./player_goal_progress.model.js";
-import Team_Goal_Progress from "./team_goal_progress.model.js";
-import Catalog from "./catalog.model.js";
-import User_Team from "./user_team.model.js";
-import Team from "./team.model.js";
-import Muscle_Group from "./muscle_group.model.js";
-import User_Metric from "./user_metric.model.js";
-import Team_Lesson from "./team_lesson.model.js";
-import User_Lesson from "./user_lesson.model.js";
+import Calendar from "./calendar.model.js";
+import Department from "./department.model.js";
+import Employee from "./employee.model.js";
+import Event from "./event.model.js";
 import Personal_Availability from "./personalAvailability.model.js";
+import Position from "./position.model.js";
+import PositionEmployee from "./positionEmployee.model.js";
+import Session from "./session.model.js";
+import Setting from "./setting.model.js";
+import SettingValue from "./settingValue.model.js";
+import Shift from "./shift.model.js";
+import ShiftAssignment from "./shiftAssignment.model.js";
+import ShiftTaskList from "./shiftTaskList.model.js";
+import ShiftTaskListStatus from "./shiftTaskListStatus.model.js";
+import SwapRequest from "./swapRequest.model.js";
+import Task from "./task.model.js";
+import TaskList from "./tasklist.model.js";
 
 
 const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.user = User;
-db.session = Session;
-db.lesson = Lesson;
-db.exercise = Exercise;
-db.player_goal = Player_Goal;
-db.player_goal_progress = Player_Goal_Progress;
-db.team_goal = Team_Goal;
-db.team_goal_progress = Team_Goal_Progress;
-db.catalog = Catalog;
-db.user_team = User_Team;
-db.team = Team;
-db.team_lesson = Team_Lesson;
-db.muscle_group = Muscle_Group;
-db.user_metric = User_Metric;
-db.user_lesson = User_Lesson;
+db.calendar = Calendar;
+db.department = Department;
+db.employee = Employee;
+db.event = Event;
 db.personal_availability = Personal_Availability;
+db.position = Position;
+db.position_employee = PositionEmployee;
+db.session = Session;
+db.setting = Setting;
+db.setting_value = SettingValue;
+db.shift = Shift;
+db.shift_assignment = ShiftAssignment;
+db.shift_task_list = ShiftTaskList;
+db.shift_task_list_status = ShiftTaskListStatus;
+db.swap_request = SwapRequest;
+db.task = Task;
+db.task_list = TaskList;
 
 // =============================
 // TEAM ↔ USER_TEAM association
