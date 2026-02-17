@@ -15,7 +15,7 @@ import Calendar from "./calendar.model.js";
 import Department from "./department.model.js";
 import Employee from "./employee.model.js";
 import Event from "./event.model.js";
-import Personal_Availability from "./personalAvailability.model.js";
+import PersonalAvailability from "./personalAvailability.model.js";
 import Position from "./position.model.js";
 import PositionEmployee from "./positionEmployee.model.js";
 import Session from "./session.model.js";
@@ -38,19 +38,19 @@ db.calendar = Calendar;
 db.department = Department;
 db.employee = Employee;
 db.event = Event;
-db.personal_availability = Personal_Availability;
+db.personalAvailability = PersonalAvailability;
 db.position = Position;
-db.position_employee = PositionEmployee;
+db.positionEmployee = PositionEmployee;
 db.session = Session;
 db.setting = Setting;
-db.setting_value = SettingValue;
+db.settingValue = SettingValue;
 db.shift = Shift;
-db.shift_assignment = ShiftAssignment;
-db.shift_task_list = ShiftTaskList;
-db.shift_task_list_status = ShiftTaskListStatus;
-db.swap_request = SwapRequest;
+db.shiftAssignment = ShiftAssignment;
+db.shiftTaskList = ShiftTaskList;
+db.shiftTaskListStatus = ShiftTaskListStatus;
+db.swapRequest = SwapRequest;
 db.task = Task;
-db.task_list = TaskList;
+db.taskList = TaskList;
 
 // =============================
 // TEAM ↔ USER_TEAM association
@@ -261,6 +261,5 @@ db.user_metric.belongsTo(db.user, {
 });
 
 export default db;
-
 
 
