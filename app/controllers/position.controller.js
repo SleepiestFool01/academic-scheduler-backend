@@ -1,161 +1,136 @@
-// controllers/positions.controller.js
-import db from "../models/index.js"; // adjust to your setup
-const { Position, Department } = db;
+import db from "../models/index.js";
 
-export async function listPositions(req, res) {
+const Position = db.position;
+const exports = {};
+
+/**
+ * Expected fields (based on your ERD):
+ * - id_position (PK, usually auto)
+ * - name
+ * - avgPayRate
+ * - id_department (FK)
+ */
+
+// Create and Save a new Position
+exports.create = async (req, res) => {
+  try {
+    const { name, avgPayRate, id_department } = req.body;
+
+    if (!name || !id_department) {
+      return res.status(400).send({
+        message: "Missing required fields: name, id_department.",
+      });
+    }
+
+    const newPosition = await Position.create({
+      name,
+      avgPayRate, // optional
+      id_department,
+    });
+
+    return res.status(201).send(newPosition);
+  } catch (err) {
+    return res.status(500).send({
+      message: err.message || "Error creating Position.",
+    });
+  }
+};
+
+// Retrieve all Positions (optionally filter by department)
+exports.findAll = async (req, res) => {
   try {
     const { id_department } = req.query;
 
     const where = {};
-    if (id_department !== undefined) {
-      const dept = Number(id_department);
-      if (!Number.isInteger(dept)) {
-        return res.status(400).json({ error: "id_department must be an integer." });
-      }
-      where.id_department = dept;
-    }
+    if (id_department) where.id_department = id_department;
+
+    const positions = await Position.findAll({ where });
+    return res.send(positions);
+  } catch (err) {
+    return res.status(500).send({
+      message: err.message || "Error retrieving Positions.",
+    });
+  }
+};
+
+// Retrieve all Positions for a specific Department
+exports.findAllForDepartment = async (req, res) => {
+  try {
+    const { id_department } = req.params;
 
     const positions = await Position.findAll({
-      where,
-      order: [["name", "ASC"]],
-      include: [
-        {
-          model: Department,
-          as: "department",
-          attributes: ["id_department", "name"],
-        },
-      ],
+      where: { id_department },
     });
 
-    res.json(positions);
+    return res.send(positions);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch positions." });
+    return res.status(500).send({
+      message: err.message || "Error retrieving Positions for department.",
+    });
   }
-}
+};
 
-export async function getPosition(req, res) {
+// Retrieve a single Position by PK
+exports.findOne = async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid id." });
+    const { id_position } = req.params;
 
-    const position = await Position.findByPk(id, {
-      include: [{ model: Department, as: "department", attributes: ["id_department", "name"] }],
-    });
+    const position = await Position.findByPk(id_position);
 
-    if (!position) return res.status(404).json({ error: "Position not found." });
-    res.json(position);
+    if (!position) {
+      return res.status(404).send({ message: "Position not found." });
+    }
+
+    return res.send(position);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch position." });
+    return res.status(500).send({
+      message: err.message || "Error retrieving Position.",
+    });
   }
-}
+};
 
-export async function createPosition(req, res) {
+// Update a Position
+exports.update = async (req, res) => {
   try {
-    const { name, avgPayRate, id_department } = req.body;
+    const { id_position } = req.params;
 
-    if (!name || typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({ error: "name is required (string)." });
-    }
-
-    const pay = Number(avgPayRate);
-    if (!Number.isFinite(pay) || pay < 0) {
-      return res.status(400).json({ error: "avgPayRate must be a non-negative number." });
-    }
-
-    const dept = Number(id_department);
-    if (!Number.isInteger(dept)) {
-      return res.status(400).json({ error: "id_department must be an integer." });
-    }
-
-    // Optional: enforce that department exists (nice error message)
-    const deptExists = await Department.findByPk(dept);
-    if (!deptExists) {
-      return res.status(400).json({ error: `Department ${dept} does not exist.` });
-    }
-
-    const created = await Position.create({
-      name: name.trim(),
-      avgPayRate: pay,
-      id_department: dept,
+    const [numUpdated] = await Position.update(req.body, {
+      where: { id_position },
     });
 
-    // return with department included
-    const hydrated = await Position.findByPk(created.id_position, {
-      include: [{ model: Department, as: "department", attributes: ["id_department", "name"] }],
-    });
+    if (numUpdated === 1) {
+      return res.send({ message: "Position updated successfully." });
+    }
 
-    res.status(201).json(hydrated);
+    return res.status(404).send({
+      message: "Position not found or body empty.",
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create position." });
+    return res.status(500).send({
+      message: err.message || "Error updating Position.",
+    });
   }
-}
+};
 
-export async function updatePosition(req, res) {
+// Delete a Position
+exports.delete = async (req, res) => {
   try {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid id." });
+    const { id_position } = req.params;
 
-    const { name, avgPayRate, id_department } = req.body;
-
-    const position = await Position.findByPk(id);
-    if (!position) return res.status(404).json({ error: "Position not found." });
-
-    if (name !== undefined) {
-      if (typeof name !== "string" || !name.trim()) {
-        return res.status(400).json({ error: "name must be a non-empty string." });
-      }
-      position.name = name.trim();
-    }
-
-    if (avgPayRate !== undefined) {
-      const pay = Number(avgPayRate);
-      if (!Number.isFinite(pay) || pay < 0) {
-        return res.status(400).json({ error: "avgPayRate must be a non-negative number." });
-      }
-      position.avgPayRate = pay;
-    }
-
-    if (id_department !== undefined) {
-      const dept = Number(id_department);
-      if (!Number.isInteger(dept)) {
-        return res.status(400).json({ error: "id_department must be an integer." });
-      }
-
-      const deptExists = await Department.findByPk(dept);
-      if (!deptExists) {
-        return res.status(400).json({ error: `Department ${dept} does not exist.` });
-      }
-
-      position.id_department = dept;
-    }
-
-    await position.save();
-
-    const hydrated = await Position.findByPk(id, {
-      include: [{ model: Department, as: "department", attributes: ["id_department", "name"] }],
+    const numDeleted = await Position.destroy({
+      where: { id_position },
     });
 
-    res.json(hydrated);
+    if (numDeleted === 1) {
+      return res.status(204).send();
+    }
+
+    return res.status(404).send({ message: "Position not found." });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to update position." });
+    return res.status(500).send({
+      message: err.message || "Error deleting Position.",
+    });
   }
-}
+};
 
-export async function deletePosition(req, res) {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: "Invalid id." });
-
-    const deleted = await Position.destroy({ where: { id_position: id } });
-    if (!deleted) return res.status(404).json({ error: "Position not found." });
-
-    res.status(204).send();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to delete position." });
-  }
-}
+export default exports;
