@@ -4,7 +4,7 @@ import SequelizeInstance from "../config/sequelizeInstance.js";
 const PersonalAvailability = SequelizeInstance.define("personalAvailability", {
     id_personalAvailability: {
         type: Sequelize.INTEGER,
-        autoincrement: true,
+        autoIncrement: true,
         primaryKey: true,
      },
 
@@ -12,16 +12,15 @@ const PersonalAvailability = SequelizeInstance.define("personalAvailability", {
     id_employee: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        foreignKey: true,
     },
 
     startDate: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: false,
     },
 
     endDate: {
-        type: Sequelize.DATE,
+        type: Sequelize.DATEONLY,
         allowNull: false,
     },
 
@@ -34,7 +33,13 @@ const PersonalAvailability = SequelizeInstance.define("personalAvailability", {
         type: Sequelize.TIME,
         allowNull: false,
     },
-
 });
+
+PersonalAvailability.associate = (models) => {
+    PersonalAvailability.belongsTo(models.Employee, {
+      foreignKey: "id_employee",
+      as: "employee",
+    });
+  };
 
 export default PersonalAvailability;
