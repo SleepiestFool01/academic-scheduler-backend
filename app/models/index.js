@@ -262,4 +262,3 @@ db.user_metric.belongsTo(db.user, {
 
 export default db;
 
-
