@@ -1,19 +1,25 @@
-// routes/positions.routes.js
+// routes/position.routes.js
 import { Router } from "express";
-import {
-  listPositions,
-  getPosition,
-  createPosition,
-  updatePosition,
-  deletePosition,
-} from "../controllers/positions.controller.js";
+import position from "../controllers/position.controller.js";
 
 const router = Router();
 
-router.get("/", listPositions);
-router.get("/:id", getPosition);
-router.post("/", createPosition);
-router.put("/:id", updatePosition);
-router.delete("/:id", deletePosition);
+// GET /position?id_department=...
+router.get("/", position.findAll);
+
+// GET /position/:id_position
+router.get("/:id_position", position.findOne);
+
+// POST /position
+router.post("/", position.create);
+
+// PUT /position/:id_position
+router.put("/:id_position", position.update);
+
+// DELETE /position/:id_position
+router.delete("/:id_position", position.delete);
+
+// (optional) GET /position/department/:id_department
+router.get("/department/:id_department", position.findAllForDepartment);
 
 export default router;
