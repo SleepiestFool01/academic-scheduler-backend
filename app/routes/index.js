@@ -37,5 +37,6 @@ router.use("/user-metrics", UserMetricRoutes);
 router.use("/user-teams", UserTeamRoutes);
 router.use("/user-lessons", UserLessonRoutes);
 router.use("/exercises", ExerciseRoutes);
+router.use("position", PositionRoutes);
 
 export default router;
