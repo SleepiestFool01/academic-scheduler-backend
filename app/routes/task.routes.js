@@ -7,25 +7,19 @@ var router = Router()
 // Create a new Task
 router.post("/", [authenticate], task.create);
 
-// Create a new Emloyee with 
-router.post("/create-employee", [authenticate], employees.createEmployee);
+// Retrieve all Tasks
+router.get("/", [authenticate], task.findAll);
 
-// Retrieve all People/Employees
-router.get("/", [authenticate], employees.findAll);
+// Retrieve all Tasks for a specific TaskList
+router.get("/tasklist/:id_taskList", [authenticate], task.findAllForTaskList);
 
-// Retrieve all employees
-router.get("/employees", [authenticate], employees.findAllEmployees);
+// Retrieve a single Task
+router.get("/:id_task", [authenticate], task.findOne);
 
-// Retrieve a single Employee with id_employee
-router.get("/:id_employee", [authenticate], employees.findOne);
+// Update a Task
+router.put("/:id_task", [authenticate], task.update);
 
-// Update a Employee with id_employee
-router.put("/:id_employee", [authenticate], employees.update);
-
-// Update Employee's Role
-router.put("/role/:id_employee", [authenticate], employees.updateRole);
-
-// Delete a Employee with id_employee
-router.delete("/:id_employee", [authenticate], employees.delete);
+// Delete a Task
+router.delete("/:id_task", [authenticate], task.delete);
 
 export default router;
