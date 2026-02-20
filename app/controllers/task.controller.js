@@ -8,9 +8,9 @@ const exports = {};
 // Create and Save a new Task
 exports.create = (req, res) => {
   // Validate request
-  if (!req.body.name || !req.body.description || !req.body.id_tasklist) {
+  if (!req.body.name || !req.body.description || !req.body.id_taskList) {
     return res.status(400).send({
-      message: "Missing required fields: name, description, id_tasklist.",
+      message: "Missing required fields: name, description, id_taskList.",
     });
   }
 
@@ -37,7 +37,7 @@ exports.findAll = (req, res) => {
 
 // Retrieve all Tasks for a specific TaskList.
 exports.findAllForTaskList = (req, res) => {
-  Task.findAll({ where: { id_tasklist: req.params.id_tasklist } })
+  Task.findAll({ where: { id_taskList: req.params.id_taskList } })
     .then(data => res.send(data))
     .catch((err) => 
       res.status(500).send({

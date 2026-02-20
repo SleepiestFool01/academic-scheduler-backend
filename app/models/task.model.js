@@ -29,7 +29,7 @@ const Task = SequelizeInstance.define("task", {
 
 Task.associate = (models) => {
     Task.belongsTo(models.TaskList, {
-        foreignKey: "id_tasklist",
+        foreignKey: "id_taskList",
         as: "taskList",
     });
 };
