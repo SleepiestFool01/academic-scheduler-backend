@@ -25,6 +25,7 @@ import ShiftAssignmentRoutes from "./shiftAssignment.routes.js";
 import ShiftTaskListRoutes from "./shiftTaskList.routes.js";
 import TaskListRoutes from "./taskList.routes.js";
 import SwapRequestRoutes from "./swapRequest.routes.js";
+import ShiftTaskListStatusRoutes from "./shiftTaskListStatus.routes.js";
 
 
 const router = Router();
@@ -55,5 +56,6 @@ router.use("/shift-assignments", ShiftAssignmentRoutes);
 router.use("/shift-task-lists", ShiftTaskListRoutes);
 router.use("/task-lists", TaskListRoutes);
 router.use("/swap-requests", SwapRequestRoutes);
+router.use("/shift-task-list-statuses", ShiftTaskListStatusRoutes);
 
 export default router;
