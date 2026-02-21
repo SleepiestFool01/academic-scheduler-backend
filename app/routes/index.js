@@ -21,6 +21,7 @@ import ShiftRoutes from "./shift.routes.js";
 import SettingRoutes from "./setting.routes.js";
 import SettingValueRoutes from "./settingValue.routes.js";
 import DepartmentRoutes from "./department.routes.js";
+import ShiftAssignmentRoutes from "./shiftAssignment.routes.js";
 
 
 const router = Router();
@@ -47,5 +48,6 @@ router.use("/shifts", ShiftRoutes);
 router.use("/settings", SettingRoutes);
 router.use("/setting-values", SettingValueRoutes);
 router.use("/departments", DepartmentRoutes);
+router.use("/shift-assignments", ShiftAssignmentRoutes);
 
 export default router;
