@@ -20,6 +20,7 @@ import PositionRoutes from "./position.routes.js";
 import ShiftRoutes from "./shift.routes.js";
 import SettingRoutes from "./setting.routes.js";
 import SettingValueRoutes from "./settingValue.routes.js";
+import DepartmentRoutes from "./department.routes.js";
 
 
 const router = Router();
@@ -45,5 +46,6 @@ router.use("/position", PositionRoutes);
 router.use("/shifts", ShiftRoutes);
 router.use("/settings", SettingRoutes);
 router.use("/setting-values", SettingValueRoutes);
+router.use("/departments", DepartmentRoutes);
 
 export default router;
