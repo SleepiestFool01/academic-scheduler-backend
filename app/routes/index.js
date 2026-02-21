@@ -16,6 +16,9 @@ import TeamGoalProgressRoutes from "./team_goal_progress.routes.js";
 import UserMetricRoutes from "./user_metric.routes.js";
 import UserTeamRoutes from "./user_team.routes.js";
 import UserLessonRoutes from "./user_lesson.routes.js";
+import PositionRoutes from "./position.routes.js";
+import ShiftRoutes from "./shift.routes.js";
+import SettingRoutes from "./setting.routes.js";
 
 
 const router = Router();
@@ -37,6 +40,8 @@ router.use("/user-metrics", UserMetricRoutes);
 router.use("/user-teams", UserTeamRoutes);
 router.use("/user-lessons", UserLessonRoutes);
 router.use("/exercises", ExerciseRoutes);
-router.use("position", PositionRoutes);
+router.use("/position", PositionRoutes);
+router.use("/shifts", ShiftRoutes);
+router.use("/settings", SettingRoutes);
 
 export default router;
