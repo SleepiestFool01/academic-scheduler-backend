@@ -4,7 +4,7 @@ import authenticate from "../authorization/authorization.js";
 
 const router = Router();
 
-// Create a new Shift
+// Create a new Shifts
 router.post("/", [authenticate], shift.create);
 
 // Retrieve all Shifts
