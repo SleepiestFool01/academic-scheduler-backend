@@ -19,6 +19,7 @@ import UserLessonRoutes from "./user_lesson.routes.js";
 import PositionRoutes from "./position.routes.js";
 import ShiftRoutes from "./shift.routes.js";
 import SettingRoutes from "./setting.routes.js";
+import SettingValueRoutes from "./settingValue.routes.js";
 
 
 const router = Router();
@@ -43,5 +44,6 @@ router.use("/exercises", ExerciseRoutes);
 router.use("/position", PositionRoutes);
 router.use("/shifts", ShiftRoutes);
 router.use("/settings", SettingRoutes);
+router.use("/setting-values", SettingValueRoutes);
 
 export default router;
