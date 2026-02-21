@@ -1,5 +1,6 @@
 
 import routes from "./app/routes/index.js";
+import calendarRoutes from "./app/routes/calendar.routes.js";
 import express, { json, urlencoded } from "express"
 import cors from "cors";
 
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
   
 // Load the routes from the routes folder
 app.use("/tracker-t9", routes); 
+app.use("/tracker-t9/calendar", calendarRoutes);
 
 
 // set port, listen for requests

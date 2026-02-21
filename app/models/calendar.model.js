@@ -6,7 +6,7 @@ import SequelizeInstance from"../config/sequelizeInstance.js";
 const Calendar = SequelizeInstance.define("calendar", {
     id_hours_of_operation: {
         type: SequelizeInstance.INTEGER, 
-        autoincrement: true,
+        autoIncrement: true,
         primaryKey: true,
     },
 
