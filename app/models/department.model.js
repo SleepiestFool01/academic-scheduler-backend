@@ -4,7 +4,7 @@ import SequelizeInstance from"../config/sequelizeInstance.js";
 const Department = SequelizeInstance.define("department", {
     id_department: {
         type: Sequelize.INTEGER, 
-        autoincrement: true,
+        autoIncrement: true,
         primaryKey: true,
     },
 
