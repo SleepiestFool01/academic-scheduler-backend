@@ -1,5 +1,5 @@
 import Sequelize from "sequelize";
-import SequelizeInstance from "../config/sequelizeInstance";
+import SequelizeInstance from "../config/sequelizeInstance.js";
 
 const Shift = SequelizeInstance.define("shift", {
 

@@ -1,16 +1,7 @@
-/*
-index.js in Models is how we can relate each table within the database to one another. 
-Create foreign keys within each table, first you have to import each "Entity" or table into the Index file, 
-then assign each as a constant within the database.
-*/
-
-//CATALOG RELATIONS - I dont think it needs anu relations because it is a bridge table
-
-//USER TEAM BRIDGE TABLE RELATIONS - I dont think it needs anu relations because it is a bridge table
 import { Sequelize } from "sequelize";
 import sequelize from "../config/sequelizeInstance.js";
 
-// Import the models of each table into index. 
+// Models
 import Calendar from "./calendar.model.js";
 import Department from "./department.model.js";
 import Employee from "./employee.model.js";
@@ -28,7 +19,6 @@ import ShiftTaskListStatus from "./shiftTaskListStatus.model.js";
 import SwapRequest from "./swapRequest.model.js";
 import Task from "./task.model.js";
 import TaskList from "./tasklist.model.js";
-
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -53,212 +43,163 @@ db.task = Task;
 db.taskList = TaskList;
 
 // =============================
-// TEAM ↔ USER_TEAM association
+// Scheduler-specific relations
 // =============================
 
-// Team can have many user_team rows
-db.team.hasMany(db.user_team, {
-  foreignKey: "id_team",
-  as: "user_team_entries"
-});
-db.user_team.belongsTo(db.team, {
-  foreignKey: "id_team",
-  as: "team"
-});
-
-// =============================
-// USER ↔ USER_TEAM association
-// =============================
-
-// User can have many user_team rows
-db.user.hasMany(db.user_team, {
-  foreignKey: "id_user",
-  as: "user_team_entries"
-});
-db.user_team.belongsTo(db.user, {
-  foreignKey: "id_user",
-  as: "user"
-});
-
-// TEAM ↔ LESSON (Exercise Plans) RELATIONS
-db.team.belongsToMany(db.lesson, {
-  through: db.team_lesson,
-  foreignKey: "id_team",
-  otherKey: "id_lesson",
-  as: "plans",          // team.plans
-});
-
-db.lesson.belongsToMany(db.team, {
-  through: db.team_lesson,
-  foreignKey: "id_lesson",
-  otherKey: "id_team",
-  as: "teams",          // lesson.teams
-});
-
-db.team_lesson.belongsTo(db.team, {
-  foreignKey: "id_team",
-  as: "team",
-});
-
-db.team_lesson.belongsTo(db.lesson, {
-  foreignKey: "id_lesson",
-  as: "lesson",
-});
-
-// USER ↔ LESSON (Assigned Workouts) RELATIONS
-db.user.belongsToMany(db.lesson, {
-  through: db.user_lesson,
-  foreignKey: "id_user",
-  otherKey: "id_lesson",
-  as: "assigned_lessons",
-});
-
-db.lesson.belongsToMany(db.user, {
-  through: db.user_lesson,
-  foreignKey: "id_lesson",
-  otherKey: "id_user",
-  as: "assigned_users",
-});
-
-db.user_lesson.belongsTo(db.user, {
-  foreignKey: "id_user",
-  as: "user",
-});
-
-db.user_lesson.belongsTo(db.lesson, {
-  foreignKey: "id_lesson",
-  as: "lesson",
-});
-
-
-//For Catalog lessons belong to many users & Users belong to many lessons for the relations 
-//Do the same thing for the user_team bridge table. 
-
-//USER RELATIONS 
-db.user.hasMany(db.session, {
-  as: "sessions",
-  foreignKey: { name: "id_user", allowNull: false },
-  onDelete: "CASCADE",
-});
-db.user.hasMany(db.lesson, {
-  as: "lessons",
-  foreignKey: { name: "id_user", allowNull: false },
-  onDelete: "CASCADE",
-});
-db.user.hasMany(db.player_goal, {
-  as: "player_goal", 
-  foreignKey: {name: "id_user", allowNull: false }, 
-  onDelete: "CASCADE", 
-});
-db.user.belongsToMany(db.team, {
-  through: db.user_team,
-  foreignKey: "id_user",
-  otherKey: "id_team",
-  as: "teams",
-});
-
-//SESSION RELATIONS 
-db.session.belongsTo(db.user, {
-  as: "user",
-  foreignKey: { name: "id_user", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-//LESSON RELATIONS 
-db.lesson.hasMany(db.exercise, {
-  as: "exercises",
-  foreignKey: { name: "id_lesson", allowNull: false },
-  onDelete: "CASCADE",
-});
-db.lesson.belongsTo(db.user, {
-  as: "user",
-  foreignKey: { name: "id_user", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-db.muscle_group.hasMany(db.lesson, {
-  as: "lessons",
-  foreignKey: { name: "id_muscle_group", allowNull: false },
-  onDelete: "RESTRICT",
-});
-
-db.lesson.belongsTo(db.muscle_group, {
-  as: "muscle_group",
-  foreignKey: { name: "id_muscle_group", allowNull: false },
-  onDelete: "RESTRICT",
-});
-
-//EXERCISES RELATIONS 
-db.exercise.belongsTo(db.lesson, {
-  as: "lesson",
-  foreignKey: { name: "id_lesson", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-//Player_Goal RELATIONS 
-db.player_goal.belongsTo(db.user,{
-  as: "user",
-  foreignKey: {name: "id_user", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-db.player_goal.hasMany(db.player_goal_progress, {
-  as: "progress_entries",
-  foreignKey: { name: "id_player_goal", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-db.player_goal_progress.belongsTo(db.player_goal, {
-  as: "goal",
-  foreignKey: { name: "id_player_goal", allowNull: false },
-  onDelete: "CASCADE",
-});
-
-db.player_goal_progress.belongsTo(db.user_metric, {
-  as: "metric_snapshot",
-  foreignKey: { name: "id_user_metric", allowNull: true },
+// Department relations
+Position.belongsTo(Department, {
+  foreignKey: { name: "id_department", allowNull: true },
+  as: "department",
   onDelete: "SET NULL",
 });
+Department.hasMany(Position, {
+  foreignKey: { name: "id_department", allowNull: true },
+  as: "positions",
+});
 
-
-//TEAM GOAL RELATIONS 
-db.team_goal.belongsTo(db.team, {
-  as: "team", 
-  foreignKey: {name: "id_team", allowNull: true},
-  onDelete: "CASCADE", 
-}),
-
-db.team_goal.hasMany(db.team_goal_progress, {
-  as: "progress_entries",
-  foreignKey: { name: "id_team_goal", allowNull: false },
+Event.belongsTo(Department, {
+  foreignKey: { name: "id_department", allowNull: false },
+  as: "department",
   onDelete: "CASCADE",
 });
+Department.hasMany(Event, {
+  foreignKey: { name: "id_department", allowNull: false },
+  as: "events",
+});
 
-db.team_goal_progress.belongsTo(db.team_goal, {
-  as: "goal",
-  foreignKey: { name: "id_team_goal", allowNull: false },
+SettingValue.belongsTo(Department, {
+  foreignKey: { name: "id_department", allowNull: false },
+  as: "department",
   onDelete: "CASCADE",
 });
-
-db.team.belongsToMany(db.user, {
-  through: db.user_team,
-  foreignKey: "id_team",
-  otherKey: "id_user",
-  as: "members",
+Department.hasMany(SettingValue, {
+  foreignKey: { name: "id_department", allowNull: false },
+  as: "settingValues",
 });
 
-//USER METRIC RELATIONS
-db.user.hasMany(db.user_metric, {
-  as: "metrics",
-  foreignKey: { name: "id_user", allowNull: false },
+// Position ↔ Employee (assignment bridge)
+PositionEmployee.belongsTo(Position, {
+  foreignKey: { name: "id_position", allowNull: false },
+  as: "position",
   onDelete: "CASCADE",
 });
+PositionEmployee.belongsTo(Employee, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "employee",
+  onDelete: "CASCADE",
+});
+Position.hasMany(PositionEmployee, {
+  foreignKey: { name: "id_position", allowNull: false },
+  as: "positionEmployees",
+});
+Employee.hasMany(PositionEmployee, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "positionEmployees",
+});
 
-db.user_metric.belongsTo(db.user, {
-  as: "user",
-  foreignKey: { name: "id_user", allowNull: false },
+// Employee availability
+PersonalAvailability.belongsTo(Employee, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "employee",
+  onDelete: "CASCADE",
+});
+Employee.hasMany(PersonalAvailability, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "availabilities",
+});
+
+// Settings
+SettingValue.belongsTo(Setting, {
+  foreignKey: { name: "id_setting", allowNull: false },
+  as: "setting",
+  onDelete: "CASCADE",
+});
+Setting.hasMany(SettingValue, {
+  foreignKey: { name: "id_setting", allowNull: false },
+  as: "values",
+});
+
+// Shifts
+ShiftAssignment.belongsTo(Shift, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shift",
+  onDelete: "CASCADE",
+});
+Shift.hasMany(ShiftAssignment, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "assignments",
+});
+
+ShiftAssignment.belongsTo(Employee, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "employee",
+  onDelete: "CASCADE",
+});
+Employee.hasMany(ShiftAssignment, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "shiftAssignments",
+});
+
+ShiftTaskList.belongsTo(Shift, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shift",
+  onDelete: "CASCADE",
+});
+Shift.hasMany(ShiftTaskList, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "taskLists",
+});
+
+ShiftTaskList.belongsTo(Task, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "task",
+  onDelete: "CASCADE",
+});
+Task.hasMany(ShiftTaskList, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "shiftLinks",
+});
+
+ShiftTaskListStatus.belongsTo(Shift, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shift",
+  onDelete: "CASCADE",
+});
+Shift.hasMany(ShiftTaskListStatus, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "taskStatuses",
+});
+
+ShiftTaskListStatus.belongsTo(Task, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "task",
+  onDelete: "CASCADE",
+});
+Task.hasMany(ShiftTaskListStatus, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "shiftStatuses",
+});
+
+// Swap requests
+SwapRequest.belongsTo(Shift, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shift",
+  onDelete: "CASCADE",
+});
+Shift.hasMany(SwapRequest, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "swapRequests",
+});
+
+SwapRequest.belongsTo(Employee, {
+  foreignKey: { name: "id_employeeRequester", allowNull: false },
+  as: "requester",
+  onDelete: "CASCADE",
+});
+SwapRequest.belongsTo(Employee, {
+  foreignKey: { name: "id_employeeRequested", allowNull: false },
+  as: "requested",
   onDelete: "CASCADE",
 });
 
 export default db;
-

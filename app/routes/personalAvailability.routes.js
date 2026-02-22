@@ -8,35 +8,35 @@ var router = Router();
 router.post(
   "/employees/:id_employee",
   [authenticate],
-  personalAvailability.createForEmployee
+  personalAvailability.create
 );
 
 // Retrieve all PersonalAvailability records for an employee
 router.get(
   "/employees/:id_employee",
   [authenticate],
-  personalAvailability.listForEmployee
+  personalAvailability.findAllForUser
 );
 
 // Retrieve a single PersonalAvailability record
 router.get(
-  "/employees/:id_employee/:id",
+  "/employees/:id_employee/:id_personalAvailability",
   [authenticate],
-  personalAvailability.getOneForEmployee
+  personalAvailability.findOne
 );
 
 // Update a PersonalAvailability record
 router.put(
-  "/employees/:id_employee/:id",
+  "/employees/:id_employee/:id_personalAvailability",
   [authenticate],
-  personalAvailability.updateForEmployee
+  personalAvailability.update
 );
 
 // Delete a PersonalAvailability record
 router.delete(
-  "/employees/:id_employee/:id",
+  "/employees/:id_employee/:id_personalAvailability",
   [authenticate],
-  personalAvailability.deleteForEmployee
+  personalAvailability.delete
 );
 
 export default router;

@@ -9,8 +9,9 @@ const Setting = SequelizeInstance.define("setting", {
     primaryKey: true,
   },
 
+  // example types: BOOLEAN, STRING, NUMBER, LIST; stored as string to keep flexible
   type: {
-    type: Sequelize.ENUM,
+    type: Sequelize.STRING,
     allowNull: false,
   },
 

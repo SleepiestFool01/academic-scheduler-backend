@@ -1,4 +1,4 @@
-import users from "../controllers/employee.controller.js";
+import employees from "../controllers/employee.controller.js";
 import authenticate from "../authorization/authorization.js";
 import { Router } from "express";
 var router = Router()
