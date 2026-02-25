@@ -1,6 +1,6 @@
 import db from "../models/index.js";
 
-const Employee = db.user;
+const Employee = db.employee;
 const Op = db.Sequelize.Op;
 const exports = {};
 
@@ -56,7 +56,7 @@ exports.findAll = (req, res) => {
 
 // Find all users with role = "Employee"
 exports.findAllEmployees = (req, res) => {
-  db.user
+  db.employee
     .findAll({ where: { role: "Employee" } })
     .then(data => res.send(data))
     .catch(err => {

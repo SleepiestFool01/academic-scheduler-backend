@@ -9,7 +9,7 @@ const Session = SequelizeInstance.define("session", {
     primaryKey: true,
   },
   //Foreign Keys 
-  id_user: {
+  id_employee: {
     type: Sequelize.INTEGER,
     allowNull: false,
   },

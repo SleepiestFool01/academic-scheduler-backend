@@ -32,7 +32,7 @@ exports.findAll = (_req, res) => {
 };
 
 // Retrieve Personal Availability for a specific Employee
-exports.findAllForUser = (req, res) => {
+exports.findAllForEmployee = (req, res) => {
   PersonalAvailability.findAll({ where: { id_employee: req.params.id_employee } })
     .then((data) => res.send(data))
     .catch((err) =>

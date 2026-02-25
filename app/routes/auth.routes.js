@@ -7,7 +7,7 @@ var router = Router()
 router.post("/login", auth.login);
 
 // Authorization
-router.post("/authorize/:id_user", auth.authorize);
+router.post("/authorize/:id_employee", auth.authorize);
 
 // Logout
 router.post("/logout", auth.logout);

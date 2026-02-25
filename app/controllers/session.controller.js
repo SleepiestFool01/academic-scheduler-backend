@@ -5,9 +5,9 @@ const exports = {};
 
 // Create and Save a new session
 exports.create = (req, res) => {
-  if (!req.body.id_user || !req.body.token || !req.body.expirationDate) {
+  if (!req.body.id_employee || !req.body.token || !req.body.expirationDate) {
     return res.status(400).send({
-      message: "id_user, token, and expirationDate are required.",
+      message: "id_employee, token, and expirationDate are required.",
     });
   }
 
@@ -31,9 +31,9 @@ exports.findAll = (_req, res) => {
     );
 };
 
-// Retrieve sessions for a user
-exports.findAllForUser = (req, res) => {
-  Session.findAll({ where: { id_user: req.params.id_user } })
+// Retrieve sessions for an employee
+exports.findAllForEmployee = (req, res) => {
+  Session.findAll({ where: { id_employee: req.params.id_employee } })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({

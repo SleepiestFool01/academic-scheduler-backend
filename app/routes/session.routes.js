@@ -10,8 +10,8 @@ router.post("/", [authenticate], sessionController.create);
 // Retrieve all sessions
 router.get("/", [authenticate], sessionController.findAll);
 
-// Retrieve sessions for a specific user
-router.get("/user/:id_user", [authenticate], sessionController.findAllForUser);
+// Retrieve sessions for a specific employee
+router.get("/employee/:id_employee", [authenticate], sessionController.findAllForEmployee);
 
 // Retrieve a single session
 router.get("/:id_session", [authenticate], sessionController.findOne);

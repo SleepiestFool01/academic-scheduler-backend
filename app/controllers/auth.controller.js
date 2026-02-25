@@ -4,7 +4,7 @@ import { OAuth2Client } from "google-auth-library";
 import  { google } from "googleapis";
 import jwt from "jsonwebtoken";
 
-const User = db.user;
+const Employee = db.employee;
 const Session = db.session;
 const Op = db.Sequelize.Op;
 
@@ -49,7 +49,7 @@ exports.login = async (req, res) => {
       auth: oauth2Client,
       version: "v2",
     });
-    let { data } = await oauth2.userinfo.get(); // get user info
+    let { data } = await oauth2.userinfo.get(); // get employee info
     console.log(data);
     email = data.email;
     firstName = data.given_name;
@@ -57,20 +57,20 @@ exports.login = async (req, res) => {
   }
 
 
-  let user = {};
+  let employee = {};
   let session = {};
 
-  await User.findOne({
+  await Employee.findOne({
     where: {
       email: email,
     },
   })
     .then((data) => {
       if (data != null) {
-        user = data.dataValues;
+        employee = data.dataValues;
       } else {
-        // create a new User and save to database
-        user = {
+        // create a new Employee and save to database
+        employee = {
           fName: firstName,
           lName: lastName,
           email: email,
@@ -81,12 +81,12 @@ exports.login = async (req, res) => {
       res.status(500).send({ message: err.message });
     });
 
-  // this lets us get the user id
-  if (user.id_user === undefined) {
+  // this lets us get the employee id
+  if (employee.id_employee === undefined) {
   
-    await User.create(user)
+    await Employee.create(employee)
       .then((data) => {
-        user = data.dataValues;
+        employee = data.dataValues;
       })
       .catch((err) => {
         res.status(500).send({ message: err.message });
@@ -94,22 +94,22 @@ exports.login = async (req, res) => {
       });
   } else {
     
-    // doing this to ensure that the user's name is the one listed with Google
-    user.fName = firstName;
-    user.lName = lastName;
+    // doing this to ensure that the employee's name is the one listed with Google
+    employee.fName = firstName;
+    employee.lName = lastName;
   
-    await User.update(user, { where: { id_user: user.id_user } })
+    await Employee.update(employee, { where: { id_employee: employee.id_employee } })
       .then((num) => {
         if (num == 1) {
-          console.log("updated user's name");
+          console.log("updated employee's name");
         } else {
           console.log(
-            `Cannot update User with id_user=${user.id_user}. Maybe User was not found or req.body is empty!`
+            `Cannot update Employee with id_employee=${employee.id_employee}. Maybe Employee was not found or req.body is empty!`
           );
         }
       })
       .catch((err) => {
-        console.log("Error updating User with id=" + user.id_user + " " + err);
+        console.log("Error updating Employee with id=" + employee.id_employee + " " + err);
       });
   }
 
@@ -134,34 +134,34 @@ exports.login = async (req, res) => {
               } else {
                 console.log("failed");
                 res.send({
-                  message: `Error logging out user.`,
+                  message: `Error logging out employee.`,
                 });
               }
             })
             .catch((err) => {
               console.log(err);
               res.status(500).send({
-                message: "Error logging out user.",
+                message: "Error logging out employee.",
               });
             });
           //reset session to be null since we need to make another one
           session = {};
         } else {
           // if the session is still valid, then send info to the front end
-          let userInfo = {
-            email: user.email,
-            fName: user.fName,
-            lName: user.lName,
-            id_user: user.id_user,
+          let employeeInfo = {
+            email: employee.email,
+            fName: employee.fName,
+            lName: employee.lName,
+            id_employee: employee.id_employee,
             token: session.token,
-            role: user.role, //added so I can checl the role in the freindly login & check if a user is a admin, Coach, or a Player
+            role: employee.role, //added so I can checl the role in the freindly login & check if a employee is a admin, Coach, or a Player
             picture: googleUser?.picture,
-            // refresh_token: user.refresh_token,
-            // expiration_date: user.expiration_date
+            // refresh_token: employee.refresh_token,
+            // expiration_date: employee.expiration_date
           };
           console.log("found a session, don't need to make another one");
-          console.log(userInfo);
-          res.send(userInfo);
+          console.log(employeeInfo);
+          res.send(employeeInfo);
         }
       }
     })
@@ -182,7 +182,7 @@ exports.login = async (req, res) => {
     const session = {
       token: token,
       email: email,
-      id_user: user.id_user,
+      id_employee: employee.id_employee,
       expirationDate: tempExpirationDate,
     };
 
@@ -191,19 +191,19 @@ exports.login = async (req, res) => {
 
     await Session.create(session)
       .then(() => {
-        let userInfo = {
-          email: user.email,
-          fName: user.fName,
-          lName: user.lName,
-          id_user: user.id_user,
+        let employeeInfo = {
+          email: employee.email,
+          fName: employee.fName,
+          lName: employee.lName,
+          id_employee: employee.id_employee,
           token: token,
-          role: user.role,
+          role: employee.role,
           picture: googleUser?.picture,
-          // refresh_token: user.refresh_token,
-          // expiration_date: user.expiration_date
+          // refresh_token: employee.refresh_token,
+          // expiration_date: employee.expiration_date
         };
-        console.log(userInfo);
-        res.send(userInfo);
+        console.log(employeeInfo);
+        res.send(employeeInfo);
       })
       .catch((err) => {
         res.status(500).send({ message: err.message });
@@ -224,45 +224,45 @@ exports.authorize = async (req, res) => {
   let { tokens } = await oauth2Client.getToken(req.body.code);
   oauth2Client.setCredentials(tokens);
 
-  let user = {};
+  let employee = {};
   console.log("findUser");
 
-  await User.findOne({
+  await Employee.findOne({
     where: {
-      id_user: req.params.id_user,
+      id_employee: req.params.id_employee,
     },
   })
     .then((data) => {
       if (data != null) {
-        user = data.dataValues;
+        employee = data.dataValues;
       }
     })
     .catch((err) => {
       res.status(500).send({ message: err.message });
       return;
     });
-  console.log("user");
-  console.log(user);
-  user.refresh_token = tokens.refresh_token;
+  console.log("employee");
+  console.log(employee);
+  employee.refresh_token = tokens.refresh_token;
   let tempExpirationDate = new Date();
   tempExpirationDate.setDate(tempExpirationDate.getDate() + 100);
-  user.expiration_date = tempExpirationDate;
+  employee.expiration_date = tempExpirationDate;
 
-  await User.update(user, { where: { id_user: user.id_user } })
+  await Employee.update(employee, { where: { id_employee: employee.id_employee } })
     .then((num) => {
       if (num == 1) {
-        console.log("updated user's google token stuff");
+        console.log("updated employee's google token stuff");
       } else {
         console.log(
-          `Cannot update User with id=${user.id_user}. Maybe User was not found or req.body is empty!`
+          `Cannot update Employee with id=${employee.id_employee}. Maybe Employee was not found or req.body is empty!`
         );
       }
-      let userInfo = {
-        refresh_token: user.refresh_token,
-        expiration_date: user.expiration_date,
+      let employeeInfo = {
+        refresh_token: employee.refresh_token,
+        expiration_date: employee.expiration_date,
       };
-      console.log(userInfo);
-      res.send(userInfo);
+      console.log(employeeInfo);
+      res.send(employeeInfo);
     })
     .catch((err) => {
       res.status(500).send({ message: err.message });
@@ -276,7 +276,7 @@ exports.logout = async (req, res) => {
   console.log(req.body);
   if (req.body === null) {
     res.send({
-      message: "User has already been successfully logged out!",
+      message: "Employee has already been successfully logged out!",
     });
     return;
   }
@@ -305,25 +305,25 @@ exports.logout = async (req, res) => {
         if (num == 1) {
           console.log("successfully logged out");
           res.send({
-            message: "User has been successfully logged out!",
+            message: "Employee has been successfully logged out!",
           });
         } else {
           console.log("failed");
           res.send({
-            message: `Error logging out user.`,
+            message: `Error logging out employee.`,
           });
         }
       })
       .catch((err) => {
         console.log(err);
         res.status(500).send({
-          message: "Error logging out user.",
+          message: "Error logging out employee.",
         });
       });
   } else {
     console.log("already logged out");
     res.send({
-      message: "User has already been successfully logged out!",
+      message: "Employee has already been successfully logged out!",
     });
   }
 };
