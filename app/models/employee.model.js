@@ -33,6 +33,11 @@ const Employee = SequelizeInstance.define("employee", {
         allowNull: true,
         defaultValue: "Share your goals, experience, or anything your coach should know.",
     },
+    color: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
 });
 
 export default Employee;
