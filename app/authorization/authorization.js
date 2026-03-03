@@ -1,39 +1,36 @@
-import db  from "../models/index.js";
+import db from "../models/index.js";
 const Session = db.session;
 
 const authenticate = (req, res, next) => {
-  let token = null;
- 
-  let authHeader = req.get("authorization");
-  if (authHeader != null) {
-    if (authHeader.startsWith("Bearer ")) {
-      token = authHeader.slice(7);
+  const authHeader = req.get("authorization");
 
-      Session.findAll({ where: { token: token } })
-        .then((data) => {
-          let session = data[0];
-          console.log(session.expirationDate);
-          if (session != null) {
-            if (session.expirationDate >= Date.now()) {
-              next();
-              return;
-            } else
-              return res.status(401).send({
-                message: "Unauthorized! Expired Token, Logout and Login again",
-              });
-          }
-        })
-        .catch((err) => {
-          console.log(err.message);
-        });
-    }
-  } else {
-    return res.status(401).send({
-      message: "Unauthorized! No Auth Header",
-    });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send({ message: "Unauthorized! No Auth Header" });
   }
+
+  const token = authHeader.slice(7);
+
+  Session.findAll({ where: { token } })
+    .then((data) => {
+      const session = data[0];
+
+      // No session found for this token
+      if (!session) {
+        return res.status(401).send({ message: "Unauthorized! Session not found" });
+      }
+
+      // Session exists but has expired
+      if (session.expirationDate < Date.now()) {
+        return res.status(401).send({ message: "Unauthorized! Expired token, please log out and log in again" });
+      }
+
+      // Valid session — allow request through
+      next();
+    })
+    .catch((err) => {
+      console.log("Auth error:", err.message);
+      return res.status(500).send({ message: "Internal server error during authentication" });
+    });
 };
-
-
 
 export default authenticate;

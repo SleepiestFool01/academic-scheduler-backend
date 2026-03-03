@@ -1,34 +1,29 @@
-
 import routes from "./app/routes/index.js";
-import express, { json, urlencoded } from "express"
+import express from "express";
 import cors from "cors";
-
-import db  from "./app/models/index.js";
+import db from "./app/models/index.js";
 
 // Add new columns without manual migrations
 db.sequelize.sync({ alter: true });
 
 const app = express();
 
-// Also use the cors middleware as backup
 var corsOptions = {
   origin: "http://localhost:8081",
-  credentials: true
-}
+  credentials: true,
+};
 app.use(cors(corsOptions));
 
-
-// parse requests of content-type - application/json
+// Parse requests of content-type - application/json
 app.use(express.json());
-// parse requests of content-type - application/x-www-form-urlencoded
+// Parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
-  
-// Load the routes from the routes folder
-app.use("/tracker-t9", routes); 
 
+// Load routes — mounted at /workerscheduling-t9 to match Apache proxy and services.js baseURL
+app.use("/workerscheduling-t9", routes);
 
-// set port, listen for requests
-const PORT = process.env.PORT || 3100;
+// Set port, listen for requests
+const PORT = process.env.PORT || 3129;
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
