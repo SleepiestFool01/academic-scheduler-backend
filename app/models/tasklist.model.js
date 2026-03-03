@@ -13,16 +13,10 @@ const TaskList = SequelizeInstance.define("taskList", {
         type: Sequelize.STRING,
         allowNull: false,
     },
-    description:{
+    description: {
         type: Sequelize.STRING,
         allowNull: true,
-        defaultValue: "Task list for this shift",
-    },
-
-    //foreign key
-    id_task:{
-        type: Sequelize.INTEGER,
-        foreignKey: true,
+        defaultValue: "",
     },
 
 });

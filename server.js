@@ -3,8 +3,14 @@ import express from "express";
 import cors from "cors";
 import db from "./app/models/index.js";
 
-// Add new columns without manual migrations
-db.sequelize.sync({ alter: true });
+// Pre-sync migration: make tasks.id_tasklist nullable so Sequelize can add the
+// ON DELETE SET NULL FK constraint (MySQL rejects SET NULL on a NOT NULL column).
+// Silently ignored if the column is already nullable or the table doesn't exist yet.
+db.sequelize
+  .query("ALTER TABLE `tasks` MODIFY `id_tasklist` INTEGER NULL DEFAULT NULL")
+  .catch(() => {})
+  .then(() => db.sequelize.sync({ alter: true }))
+  .catch((err) => { console.error("Sync failed:", err.message); process.exit(1); });
 
 const app = express();
 
