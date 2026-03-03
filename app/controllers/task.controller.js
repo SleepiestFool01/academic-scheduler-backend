@@ -2,109 +2,93 @@
 import db from "../models/index.js";
 
 const Task = db.task;
-const Op = db.Sequelize.Op;
 const exports = {};
 
 // Create and Save a new Task
 exports.create = (req, res) => {
-  // Validate request
-  if (!req.body.name || !req.body.description || !req.body.id_taskList) {
+  const { name, description, id_taskList } = req.body;
+
+  if (!name || !description) {
     return res.status(400).send({
-      message: "Missing required fields: name, description, id_taskList.",
+      message: "Missing required fields: name, description.",
     });
   }
 
-  // Save Task in the database
-  Task.create(req.body)
+  Task.create({ name, description, id_taskList: id_taskList ?? null })
     .then((data) => res.status(201).send(data))
-    .catch((err) => 
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error creating the Task.",
       })
     );
 };
 
-// Retrieve all Tasks.
+// Retrieve all Tasks (optionally filtered by ?id_taskList=X)
 exports.findAll = (req, res) => {
-  Task.findAll()
+  const where = {};
+  if (req.query.id_taskList) where.id_taskList = req.query.id_taskList;
+
+  Task.findAll({ where })
     .then((data) => res.send(data))
-    .catch((err) => 
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error retrieving Tasks.",
       })
     );
 };
 
-// Retrieve all Tasks for a specific TaskList.
+// Retrieve all Tasks for a specific TaskList
 exports.findAllForTaskList = (req, res) => {
   Task.findAll({ where: { id_taskList: req.params.id_taskList } })
-    .then(data => res.send(data))
-    .catch((err) => 
+    .then((data) => res.send(data))
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error retrieving Tasks.",
       })
     );
 };
 
-// Retrieve a single Task.
+// Retrieve a single Task
 exports.findOne = (req, res) => {
   Task.findByPk(req.params.id_task)
     .then((data) => {
-      if (data) {
-        res.send(data);
-      } else {
-        res.status(404).send({
-          message: "Task not found.",
-        });
-      }
+      if (data) return res.send(data);
+      return res.status(404).send({ message: "Task not found." });
     })
-    .catch((err) => 
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error retrieving specified Task.",
       })
     );
 };
 
-// Update a Task.
+// Update a Task
 exports.update = (req, res) => {
   Task.update(req.body, {
     where: { id_task: req.params.id_task },
   })
     .then((num) => {
-      if (num === 1) {
-        res.send({
-          message: "Task was updated successfully.",
-        });
-      } else {
-        res.status(404).send({
-          message: "Task not found or body empty.",
-        });
-      }
+      const count = Array.isArray(num) ? num[0] : num;
+      if (count === 1) return res.send({ message: "Task was updated successfully." });
+      return res.status(404).send({ message: "Task not found or body empty." });
     })
-    .catch((err) => 
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error updating Task.",
       })
     );
 };
 
-// Delete a Task.
+// Delete a Task
 exports.delete = (req, res) => {
   Task.destroy({
     where: { id_task: req.params.id_task },
   })
     .then((num) => {
-      if (num === 1) {
-        res.send({
-          message: "Task was deleted successfully.",
-        });
-      } else {
-        res.status(404).send({
-          message: "Task not found.",
-        });
-      }
+      if (num === 1) return res.status(204).send();
+      return res.status(404).send({ message: "Task not found." });
     })
-    .catch((err) => 
+    .catch((err) =>
       res.status(500).send({
         message: err.message || "Error deleting Task.",
       })

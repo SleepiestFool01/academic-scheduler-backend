@@ -140,6 +140,22 @@ Employee.hasMany(ShiftAssignment, {
   as: "shiftAssignments",
 });
 
+// Task ↔ TaskList
+// constraints:false prevents Sequelize from managing the FK during sync,
+// avoiding a MySQL error when altering the column + adding a SET NULL FK atomically.
+Task.belongsTo(TaskList, {
+  foreignKey: { name: "id_taskList", allowNull: true },
+  as: "taskList",
+  onDelete: "SET NULL",
+  constraints: false,
+});
+TaskList.hasMany(Task, {
+  foreignKey: { name: "id_taskList", allowNull: true },
+  as: "tasks",
+  constraints: false,
+});
+
+// ShiftTaskList: Shift ↔ TaskList bridge
 ShiftTaskList.belongsTo(Shift, {
   foreignKey: { name: "id_shift", allowNull: false },
   as: "shift",
@@ -147,27 +163,28 @@ ShiftTaskList.belongsTo(Shift, {
 });
 Shift.hasMany(ShiftTaskList, {
   foreignKey: { name: "id_shift", allowNull: false },
-  as: "taskLists",
+  as: "shiftTaskLists",
 });
 
-ShiftTaskList.belongsTo(Task, {
-  foreignKey: { name: "id_task", allowNull: false },
-  as: "task",
+ShiftTaskList.belongsTo(TaskList, {
+  foreignKey: { name: "id_taskList", allowNull: false },
+  as: "taskList",
   onDelete: "CASCADE",
 });
-Task.hasMany(ShiftTaskList, {
-  foreignKey: { name: "id_task", allowNull: false },
-  as: "shiftLinks",
+TaskList.hasMany(ShiftTaskList, {
+  foreignKey: { name: "id_taskList", allowNull: false },
+  as: "shiftAssignments",
 });
 
-ShiftTaskListStatus.belongsTo(Shift, {
-  foreignKey: { name: "id_shift", allowNull: false },
-  as: "shift",
+// ShiftTaskListStatus: per-task completion per ShiftTaskList assignment
+ShiftTaskListStatus.belongsTo(ShiftTaskList, {
+  foreignKey: { name: "id_shiftTaskList", allowNull: false },
+  as: "shiftTaskList",
   onDelete: "CASCADE",
 });
-Shift.hasMany(ShiftTaskListStatus, {
-  foreignKey: { name: "id_shift", allowNull: false },
-  as: "taskStatuses",
+ShiftTaskList.hasMany(ShiftTaskListStatus, {
+  foreignKey: { name: "id_shiftTaskList", allowNull: false },
+  as: "statuses",
 });
 
 ShiftTaskListStatus.belongsTo(Task, {

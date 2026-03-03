@@ -13,25 +13,19 @@ const Task = SequelizeInstance.define("task", {
         type: Sequelize.STRING,
         allowNull: false,
     },
-
-    description:{
+    description: {
         type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: "Short Desciption of task to be completed...",
+        allowNull: true,
+        defaultValue: "",
     },
-    //foreign key
-    id_tasklist:{
+    // Optional FK — tasks can exist standalone (not in a list)
+    // field: maps the JS attribute name to the existing DB column (created lowercase by old model)
+    id_taskList: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        field: 'id_tasklist',
     },
 
 });
-
-Task.associate = (models) => {
-    Task.belongsTo(models.TaskList, {
-        foreignKey: "id_taskList",
-        as: "taskList",
-    });
-};
 
 export default Task;

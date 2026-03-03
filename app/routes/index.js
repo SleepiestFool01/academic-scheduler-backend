@@ -30,7 +30,7 @@ router.use("/personal-availability", PersonalAvailabilityRoutes);
 router.use("/shifts", ShiftRoutes);
 router.use("/shift-assignments", ShiftAssignmentRoutes);
 router.use("/shift-task-lists", ShiftTaskListRoutes);
-router.use("/shift-task-list-statuses", ShiftTaskListStatusRoutes);
+router.use("/shift-task-list-status", ShiftTaskListStatusRoutes);
 router.use("/tasks", TaskRoutes);
 router.use("/task-lists", TaskListRoutes);
 router.use("/settings", SettingRoutes);
