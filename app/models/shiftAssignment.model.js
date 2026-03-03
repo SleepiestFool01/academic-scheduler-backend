@@ -3,7 +3,7 @@ import SequelizeInstance from "../config/sequelizeInstance.js";
 
 const ShiftAssignment = SequelizeInstance.define("shiftAssignment", {
 
-    //PRIMARY KEY
+    //Primary Key
     id_shiftAssignment: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
