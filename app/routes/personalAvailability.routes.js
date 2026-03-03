@@ -15,7 +15,7 @@ router.post(
 router.get(
   "/employees/:id_employee",
   [authenticate],
-  personalAvailability.findAllForUser
+  personalAvailability.findAllForEmployee
 );
 
 // Retrieve a single PersonalAvailability record
