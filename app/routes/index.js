@@ -17,6 +17,9 @@ import SettingRoutes from "./setting.routes.js";
 import SettingValueRoutes from "./settingValue.routes.js";
 import SwapRequestRoutes from "./swapRequest.routes.js";
 import EventRoutes from "./event.routes.js";
+import ManagerDepartmentRoutes from "./managerDepartment.routes.js";
+import DepartmentAccessRequestRoutes from "./departmentAccessRequest.routes.js";
+import PositionEmployeeRoutes from "./positionEmployee.routes.js";
 
 const router = Router();
 
@@ -37,5 +40,8 @@ router.use("/settings", SettingRoutes);
 router.use("/setting-values", SettingValueRoutes);
 router.use("/swap-requests", SwapRequestRoutes);
 router.use("/events", EventRoutes);
+router.use("/manager-departments", ManagerDepartmentRoutes);
+router.use("/department-access-requests", DepartmentAccessRequestRoutes);
+router.use("/position-employees", PositionEmployeeRoutes);
 
 export default router;
