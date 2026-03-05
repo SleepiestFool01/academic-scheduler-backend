@@ -4,6 +4,7 @@ import sequelize from "../config/sequelizeInstance.js";
 // Models
 import Calendar from "./calendar.model.js";
 import Department from "./department.model.js";
+import DepartmentAccessRequest from "./departmentAccessRequest.model.js";
 import Employee from "./employee.model.js";
 import Event from "./event.model.js";
 import PersonalAvailability from "./personalAvailability.model.js";
@@ -16,6 +17,7 @@ import Shift from "./shift.model.js";
 import ShiftAssignment from "./shiftAssignment.model.js";
 import ShiftTaskList from "./shiftTaskList.model.js";
 import ShiftTaskListStatus from "./shiftTaskListStatus.model.js";
+import ManagerDepartment from "./managerDepartment.model.js";
 import SwapRequest from "./swapRequest.model.js";
 import Task from "./task.model.js";
 import TaskList from "./tasklist.model.js";
@@ -26,6 +28,7 @@ db.sequelize = sequelize;
 
 db.calendar = Calendar;
 db.department = Department;
+db.departmentAccessRequest = DepartmentAccessRequest;
 db.employee = Employee;
 db.event = Event;
 db.personalAvailability = PersonalAvailability;
@@ -38,6 +41,7 @@ db.shift = Shift;
 db.shiftAssignment = ShiftAssignment;
 db.shiftTaskList = ShiftTaskList;
 db.shiftTaskListStatus = ShiftTaskListStatus;
+db.managerDepartment = ManagerDepartment;
 db.swapRequest = SwapRequest;
 db.task = Task;
 db.taskList = TaskList;
@@ -217,6 +221,39 @@ SwapRequest.belongsTo(Employee, {
   foreignKey: { name: "id_employeeRequested", allowNull: false },
   as: "requested",
   onDelete: "CASCADE",
+});
+
+// ManagerDepartment: Manager ↔ Department (multi-dept access)
+ManagerDepartment.belongsTo(Employee, {
+    foreignKey: { name: "id_employee", allowNull: false },
+    as: "employee",
+    onDelete: "CASCADE",
+});
+Employee.hasMany(ManagerDepartment, {
+    foreignKey: { name: "id_employee", allowNull: false },
+    as: "managerDepartments",
+});
+
+ManagerDepartment.belongsTo(Department, {
+    foreignKey: { name: "id_department", allowNull: false },
+    as: "department",
+    onDelete: "CASCADE",
+});
+Department.hasMany(ManagerDepartment, {
+    foreignKey: { name: "id_department", allowNull: false },
+    as: "managerDepartments",
+});
+
+// DepartmentAccessRequest: Manager requests access to an additional Department
+DepartmentAccessRequest.belongsTo(Employee, {
+    foreignKey: { name: "id_employeeRequester", allowNull: false },
+    as: "requester",
+    onDelete: "CASCADE",
+});
+DepartmentAccessRequest.belongsTo(Department, {
+    foreignKey: { name: "id_department", allowNull: false },
+    as: "department",
+    onDelete: "CASCADE",
 });
 
 export default db;

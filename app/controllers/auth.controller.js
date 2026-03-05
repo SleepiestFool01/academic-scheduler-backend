@@ -106,14 +106,15 @@ exports.login = async (req, res) => {
         } else {
           // Valid existing session — respond and mark as done
           const userInfo = {
-            email:       employee.email,
-            fName:       employee.fName,
-            lName:       employee.lName,
-            id_employee: employee.id_employee,
-            token:       session.token,
-            role:        employee.role,
-            picture:     googleUser?.picture,
-            isNewUser:   false,
+            email:         employee.email,
+            fName:         employee.fName,
+            lName:         employee.lName,
+            id_employee:   employee.id_employee,
+            token:         session.token,
+            role:          employee.role,
+            picture:       googleUser?.picture,
+            isNewUser:     false,
+            id_department: employee.id_department,
           };
           console.log("Reusing existing session:", userInfo);
           res.send(userInfo);
@@ -146,14 +147,15 @@ exports.login = async (req, res) => {
     await Session.create(newSession)
       .then(() => {
         const userInfo = {
-          email:       employee.email,
-          fName:       employee.fName,
-          lName:       employee.lName,
-          id_employee: employee.id_employee,
+          email:         employee.email,
+          fName:         employee.fName,
+          lName:         employee.lName,
+          id_employee:   employee.id_employee,
           token,
-          role:        employee.role,
-          picture:     googleUser?.picture,
+          role:          employee.role,
+          picture:       googleUser?.picture,
           isNewUser,
+          id_department: employee.id_department,
         };
         console.log("Login successful:", userInfo);
         return res.send(userInfo);

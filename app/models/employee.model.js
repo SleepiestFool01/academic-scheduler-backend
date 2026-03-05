@@ -38,6 +38,11 @@ const Employee = SequelizeInstance.define("employee", {
         allowNull: true,
         defaultValue: null,
     },
+    id_department: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
 });
 
 export default Employee;
