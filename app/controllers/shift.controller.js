@@ -5,7 +5,7 @@ const exports = {};
 
 // Create and save a new Shift
 exports.create = (req, res) => {
-  const { name, description, day, date, startTime, endTime } = req.body;
+  const { name, description, day, date, startTime, endTime, id_position } = req.body;
 
   if (!name || !startTime || !endTime) {
     return res.status(400).send({
@@ -13,7 +13,7 @@ exports.create = (req, res) => {
     });
   }
 
-  Shift.create({ name, description, day, date, startTime, endTime })
+  Shift.create({ name, description, day, date, startTime, endTime, id_position: id_position ?? null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
