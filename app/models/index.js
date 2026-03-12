@@ -244,6 +244,19 @@ Department.hasMany(ManagerDepartment, {
     as: "managerDepartments",
 });
 
+// Calendar entries (hours of operation)
+Calendar.belongsTo(Department, {
+    foreignKey: { name: "id_department", allowNull: true },
+    as: "department",
+    onDelete: "CASCADE",
+    constraints: false,
+});
+Department.hasMany(Calendar, {
+    foreignKey: { name: "id_department", allowNull: true },
+    as: "calendarEntries",
+    constraints: false,
+});
+
 // DepartmentAccessRequest: Manager requests access to an additional Department
 DepartmentAccessRequest.belongsTo(Employee, {
     foreignKey: { name: "id_employeeRequester", allowNull: false },

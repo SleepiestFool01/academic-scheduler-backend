@@ -5,15 +5,15 @@ const exports = {};
 
 // Create and save a new Setting
 exports.create = (req, res) => {
-  const { type, description, code } = req.body;
+  const { name, key, type, description, code } = req.body;
 
-  if (!type || !description || !code) {
+  if (!type) {
     return res.status(400).send({
-      message: "Missing required fields: type, description, code.",
+      message: "Missing required field: type.",
     });
   }
 
-  Setting.create({ type, description, code })
+  Setting.create({ name: name || null, key: key || null, type, description: description || null, code: code || null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({

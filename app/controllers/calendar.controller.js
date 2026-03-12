@@ -5,7 +5,7 @@ const exports = {};
 
 // Create and save a new Calendar entry (hours of operation)
 exports.create = (req, res) => {
-  const { dayOfWeek, season, name, startTime, endTime } = req.body;
+  const { dayOfWeek, season, name, startTime, endTime, id_department } = req.body;
 
   if (!dayOfWeek || !name || !startTime || !endTime) {
     return res.status(400).send({
@@ -13,7 +13,7 @@ exports.create = (req, res) => {
     });
   }
 
-  Calendar.create({ dayOfWeek, season, name, startTime, endTime })
+  Calendar.create({ dayOfWeek, season: season || null, name, startTime, endTime, id_department: id_department || null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
@@ -22,9 +22,11 @@ exports.create = (req, res) => {
     );
 };
 
-// Retrieve all Calendar entries
-exports.findAll = (_req, res) => {
-  Calendar.findAll()
+// Retrieve all Calendar entries (optionally filtered by id_department)
+exports.findAll = (req, res) => {
+  const where = {};
+  if (req.query.id_department) where.id_department = req.query.id_department;
+  Calendar.findAll({ where })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({
