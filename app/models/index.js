@@ -21,6 +21,8 @@ import ManagerDepartment from "./managerDepartment.model.js";
 import SwapRequest from "./swapRequest.model.js";
 import Task from "./task.model.js";
 import TaskList from "./tasklist.model.js";
+import Template from "./template.model.js";
+import TemplateShift from "./templateShift.model.js";
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -45,6 +47,19 @@ db.managerDepartment = ManagerDepartment;
 db.swapRequest = SwapRequest;
 db.task = Task;
 db.taskList = TaskList;
+db.template      = Template;
+db.templateShift = TemplateShift;
+
+// Template → TemplateShift (cascade delete shifts when template is deleted)
+TemplateShift.belongsTo(Template, {
+  foreignKey: { name: "id_template", allowNull: false },
+  as: "template",
+  onDelete: "CASCADE",
+});
+Template.hasMany(TemplateShift, {
+  foreignKey: { name: "id_template", allowNull: false },
+  as: "shifts",
+});
 
 // =============================
 // Scheduler-specific relations
