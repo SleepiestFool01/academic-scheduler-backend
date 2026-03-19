@@ -4,7 +4,7 @@ const TemplateShift = db.templateShift;
 const exports = {};
 
 exports.create = (req, res) => {
-  const { id_template, dayOfWeek, startHour, endHour, label, notes } = req.body;
+  const { id_template, dayOfWeek, startHour, endHour, label, notes, id_position } = req.body;
 
   if (!id_template || dayOfWeek === undefined || startHour === undefined || endHour === undefined) {
     return res.status(400).send({ message: "Missing required fields: id_template, dayOfWeek, startHour, endHour." });
@@ -13,7 +13,7 @@ exports.create = (req, res) => {
     return res.status(400).send({ message: "endHour must be greater than startHour." });
   }
 
-  TemplateShift.create({ id_template, dayOfWeek, startHour, endHour, label, notes })
+  TemplateShift.create({ id_template, dayOfWeek, startHour, endHour, label, notes, id_position: id_position || null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error creating TemplateShift." })

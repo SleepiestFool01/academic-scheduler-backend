@@ -23,6 +23,10 @@ import Task from "./task.model.js";
 import TaskList from "./tasklist.model.js";
 import Template from "./template.model.js";
 import TemplateShift from "./templateShift.model.js";
+import TemplateShiftEmployee from "./templateShiftEmployee.model.js";
+import TemplateShiftTaskList from "./templateShiftTaskList.model.js";
+import TemplateApplication from "./templateApplication.model.js";
+import TemplateApplicationShift from "./templateApplicationShift.model.js";
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -47,8 +51,12 @@ db.managerDepartment = ManagerDepartment;
 db.swapRequest = SwapRequest;
 db.task = Task;
 db.taskList = TaskList;
-db.template      = Template;
-db.templateShift = TemplateShift;
+db.template                  = Template;
+db.templateShift             = TemplateShift;
+db.templateShiftEmployee     = TemplateShiftEmployee;
+db.templateShiftTaskList     = TemplateShiftTaskList;
+db.templateApplication       = TemplateApplication;
+db.templateApplicationShift  = TemplateApplicationShift;
 
 // Template → TemplateShift (cascade delete shifts when template is deleted)
 TemplateShift.belongsTo(Template, {
@@ -59,6 +67,50 @@ TemplateShift.belongsTo(Template, {
 Template.hasMany(TemplateShift, {
   foreignKey: { name: "id_template", allowNull: false },
   as: "shifts",
+});
+
+// TemplateShift → TemplateShiftEmployee (cascade)
+TemplateShiftEmployee.belongsTo(TemplateShift, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "templateShift",
+  onDelete: "CASCADE",
+});
+TemplateShift.hasMany(TemplateShiftEmployee, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "employees",
+});
+
+// TemplateShift → TemplateShiftTaskList (cascade)
+TemplateShiftTaskList.belongsTo(TemplateShift, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "templateShift",
+  onDelete: "CASCADE",
+});
+TemplateShift.hasMany(TemplateShiftTaskList, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "taskLists",
+});
+
+// Template → TemplateApplication (cascade)
+TemplateApplication.belongsTo(Template, {
+  foreignKey: { name: "id_template", allowNull: false },
+  as: "template",
+  onDelete: "CASCADE",
+});
+Template.hasMany(TemplateApplication, {
+  foreignKey: { name: "id_template", allowNull: false },
+  as: "applications",
+});
+
+// TemplateApplication → TemplateApplicationShift (cascade)
+TemplateApplicationShift.belongsTo(TemplateApplication, {
+  foreignKey: { name: "id_templateApplication", allowNull: false },
+  as: "application",
+  onDelete: "CASCADE",
+});
+TemplateApplication.hasMany(TemplateApplicationShift, {
+  foreignKey: { name: "id_templateApplication", allowNull: false },
+  as: "shiftLinks",
 });
 
 // =============================

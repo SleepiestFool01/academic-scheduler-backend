@@ -33,6 +33,11 @@ const TemplateShift = SequelizeInstance.define("templateShift", {
     allowNull: true,
     defaultValue: "",
   },
+  id_position: {
+    type: Sequelize.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  },
 });
 
 export default TemplateShift;
