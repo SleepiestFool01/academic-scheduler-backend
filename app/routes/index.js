@@ -20,6 +20,12 @@ import EventRoutes from "./event.routes.js";
 import ManagerDepartmentRoutes from "./managerDepartment.routes.js";
 import DepartmentAccessRequestRoutes from "./departmentAccessRequest.routes.js";
 import PositionEmployeeRoutes from "./positionEmployee.routes.js";
+import TemplateRoutes from "./template.routes.js";
+import TemplateShiftRoutes from "./templateShift.routes.js";
+import TemplateShiftEmployeeRoutes from "./templateShiftEmployee.routes.js";
+import TemplateShiftTaskListRoutes from "./templateShiftTaskList.routes.js";
+import TemplateApplicationRoutes from "./templateApplication.routes.js";
+import TemplateApplicationShiftRoutes from "./templateApplicationShift.routes.js";
 
 const router = Router();
 
@@ -43,5 +49,11 @@ router.use("/events", EventRoutes);
 router.use("/manager-departments", ManagerDepartmentRoutes);
 router.use("/department-access-requests", DepartmentAccessRequestRoutes);
 router.use("/position-employees", PositionEmployeeRoutes);
+router.use("/templates",                  TemplateRoutes);
+router.use("/template-shifts",            TemplateShiftRoutes);
+router.use("/template-shift-employees",   TemplateShiftEmployeeRoutes);
+router.use("/template-shift-task-lists",  TemplateShiftTaskListRoutes);
+router.use("/template-applications",      TemplateApplicationRoutes);
+router.use("/template-application-shifts", TemplateApplicationShiftRoutes);
 
 export default router;
