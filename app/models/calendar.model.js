@@ -17,9 +17,14 @@ const Calendar = SequelizeInstance.define("calendar", {
     },
 
     season: {
-        type: Sequelize.ENUM("Fall", "Winter", "Spring", "Summer", "Finals", "UNDEFINED"),
+        type: Sequelize.STRING,
         allowNull: true,
-        defaultValue: "UNDEFINED",
+        defaultValue: null,
+    },
+
+    id_department: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
     },
 
     name: {

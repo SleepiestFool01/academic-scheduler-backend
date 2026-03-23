@@ -9,6 +9,16 @@ const Setting = SequelizeInstance.define("setting", {
     primaryKey: true,
   },
 
+  name: {
+    type: Sequelize.STRING,
+    allowNull: true,
+  },
+
+  key: {
+    type: Sequelize.STRING,
+    allowNull: true,
+  },
+
   // example types: BOOLEAN, STRING, NUMBER, LIST; stored as string to keep flexible
   type: {
     type: Sequelize.STRING,
@@ -17,12 +27,11 @@ const Setting = SequelizeInstance.define("setting", {
 
   description: {
     type: Sequelize.STRING,
-    allowNull: false,
-
+    allowNull: true,
   },
   code: {
     type: Sequelize.STRING,
-    allowNull: false,
+    allowNull: true,
   },
 });
 

@@ -22,10 +22,23 @@ exports.create = (req, res) => {
     );
 };
 
-// Retrieve all SettingValues
-exports.findAll = (_req, res) => {
-  SettingValue.findAll()
-    .then((data) => res.send(data))
+// Retrieve all SettingValues (optionally filtered by id_department), includes Setting name/key
+exports.findAll = (req, res) => {
+  const where = {};
+  if (req.query.id_department) where.id_department = req.query.id_department;
+  SettingValue.findAll({
+    where,
+    include: [{ model: db.setting, as: "setting", attributes: ["name", "key"] }],
+  })
+    .then((data) => {
+      // Flatten setting name/key onto each record for easy client-side lookup
+      const flat = data.map(sv => ({
+        ...sv.toJSON(),
+        name: sv.setting?.name ?? null,
+        key:  sv.setting?.key  ?? null,
+      }));
+      res.send(flat);
+    })
     .catch((err) =>
       res.status(500).send({
         message: err.message || "Error retrieving SettingValues.",
