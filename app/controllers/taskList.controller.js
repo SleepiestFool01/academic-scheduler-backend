@@ -5,7 +5,7 @@ const exports = {};
 
 // Create and save a new TaskList
 exports.create = (req, res) => {
-  const { name, description, id_task } = req.body;
+  const { name, description, id_task, id_department } = req.body;
 
   if (!name) {
     return res.status(400).send({
@@ -13,7 +13,7 @@ exports.create = (req, res) => {
     });
   }
 
-  TaskList.create({ name, description, id_task })
+  TaskList.create({ name, description, id_task, id_department: id_department ?? null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
@@ -23,8 +23,10 @@ exports.create = (req, res) => {
 };
 
 // Retrieve all TaskLists
-exports.findAll = (_req, res) => {
-  TaskList.findAll()
+exports.findAll = (req, res) => {
+  const { id_department } = req.query;
+  const where = id_department ? { id_department } : undefined;
+  TaskList.findAll({ where })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({
