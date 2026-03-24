@@ -18,11 +18,11 @@ router.get("/employees", [authenticate], employees.findAllEmployees);
 // Retrieve a single Employee with id_employee
 router.get("/:id_employee", [authenticate], employees.findOne);
 
+// Update Employee's Role (must be before /:id_employee to avoid route shadowing)
+router.put("/role/:id_employee", [authenticate], employees.updateRole);
+
 // Update a Employee with id_employee
 router.put("/:id_employee", [authenticate], employees.update);
-
-// Update Employee's Role
-router.put("/role/:id_employee", [authenticate], employees.updateRole);
 
 // Delete a Employee with id_employee
 router.delete("/:id_employee", [authenticate], employees.delete);
