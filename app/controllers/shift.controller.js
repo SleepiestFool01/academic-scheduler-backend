@@ -5,7 +5,7 @@ const exports = {};
 
 // Create and save a new Shift
 exports.create = (req, res) => {
-  const { name, description, day, date, startTime, endTime, id_position } = req.body;
+  const { name, description, day, date, startTime, endTime, id_position, id_department } = req.body;
 
   if (!name || !startTime || !endTime) {
     return res.status(400).send({
@@ -13,7 +13,7 @@ exports.create = (req, res) => {
     });
   }
 
-  Shift.create({ name, description, day, date, startTime, endTime, id_position: id_position ?? null })
+  Shift.create({ name, description, day, date, startTime, endTime, id_position: id_position ?? null, id_department: id_department ?? null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
@@ -23,8 +23,10 @@ exports.create = (req, res) => {
 };
 
 // Retrieve all Shifts
-exports.findAll = (_req, res) => {
-  Shift.findAll()
+exports.findAll = (req, res) => {
+  const { id_department } = req.query;
+  const where = id_department ? { id_department } : undefined;
+  Shift.findAll({ where })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({

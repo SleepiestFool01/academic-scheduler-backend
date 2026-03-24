@@ -48,6 +48,12 @@ const Shift = SequelizeInstance.define("shift", {
         defaultValue: null,
     },
 
+    id_department: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
+
 });
 
 export default Shift;
