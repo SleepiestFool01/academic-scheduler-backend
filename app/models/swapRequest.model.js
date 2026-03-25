@@ -21,7 +21,8 @@ const SwapRequest = SequelizeInstance.define("swapRequest", {
 
     id_employeeRequested: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        defaultValue: null,
     },
 
     status: {

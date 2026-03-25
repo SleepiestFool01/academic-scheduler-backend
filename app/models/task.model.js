@@ -25,6 +25,11 @@ const Task = SequelizeInstance.define("task", {
         allowNull: true,
         field: 'id_tasklist',
     },
+    id_department: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
 
 });
 

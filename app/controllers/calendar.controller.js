@@ -22,11 +22,11 @@ exports.create = (req, res) => {
     );
 };
 
-// Retrieve all Calendar entries (optionally filtered by id_department)
+// Retrieve all Calendar entries — id_department required
 exports.findAll = (req, res) => {
-  const where = {};
-  if (req.query.id_department) where.id_department = req.query.id_department;
-  Calendar.findAll({ where })
+  const { id_department } = req.query;
+  if (!id_department) return res.send([]);
+  Calendar.findAll({ where: { id_department } })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({

@@ -6,7 +6,7 @@ const exports = {};
 
 // Create and Save a new Task
 exports.create = (req, res) => {
-  const { name, description, id_taskList } = req.body;
+  const { name, description, id_taskList, id_department } = req.body;
 
   if (!name || !description) {
     return res.status(400).send({
@@ -14,7 +14,7 @@ exports.create = (req, res) => {
     });
   }
 
-  Task.create({ name, description, id_taskList: id_taskList ?? null })
+  Task.create({ name, description, id_taskList: id_taskList ?? null, id_department: id_department ?? null })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
@@ -23,10 +23,11 @@ exports.create = (req, res) => {
     );
 };
 
-// Retrieve all Tasks (optionally filtered by ?id_taskList=X)
+// Retrieve all Tasks (optionally filtered by ?id_taskList=X or ?id_department=X)
 exports.findAll = (req, res) => {
   const where = {};
   if (req.query.id_taskList) where.id_taskList = req.query.id_taskList;
+  if (req.query.id_department) where.id_department = req.query.id_department;
 
   Task.findAll({ where })
     .then((data) => res.send(data))
