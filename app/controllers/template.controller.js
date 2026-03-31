@@ -19,8 +19,7 @@ exports.create = (req, res) => {
 
 exports.findAll = (req, res) => {
   const { id_department } = req.query;
-  if (!id_department) return res.send([]);
-  const where = { id_department };
+  const where = id_department ? { id_department } : undefined;
   Template.findAll({ where, order: [["createdAt", "DESC"]] })
     .then((data) => res.send(data))
     .catch((err) =>

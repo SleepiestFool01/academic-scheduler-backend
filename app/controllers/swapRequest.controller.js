@@ -7,17 +7,17 @@ const exports = {};
 exports.create = (req, res) => {
   const { id_shift, id_employeeRequester, id_employeeRequested, status } = req.body;
 
-  if (!id_shift || !id_employeeRequester) {
+  if (!id_shift || !id_employeeRequester || !id_employeeRequested) {
     return res.status(400).send({
-      message: "Missing required fields: id_shift, id_employeeRequester.",
+      message: "Missing required fields: id_shift, id_employeeRequester, id_employeeRequested.",
     });
   }
 
   SwapRequest.create({
     id_shift,
     id_employeeRequester,
-    id_employeeRequested: id_employeeRequested || null,
-    status,
+    id_employeeRequested,
+    status, // optional; defaults to model default if not provided
   })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
@@ -53,32 +53,23 @@ exports.findOne = (req, res) => {
 };
 
 // Update a SwapRequest by PK
-// When status → "Approved", automatically reassign the shift to the claimer
-exports.update = async (req, res) => {
-  try {
-    const swap = await SwapRequest.findByPk(req.params.id_swapRequest);
-    if (!swap) return res.status(404).send({ message: "SwapRequest not found." });
-
-    if (req.body.status === "Approved" && swap.id_employeeRequested) {
-      const ShiftAssignment = db.shiftAssignment;
-      const assignment = await ShiftAssignment.findOne({
-        where: { id_shift: swap.id_shift, id_employee: swap.id_employeeRequester },
-      });
-      if (assignment) {
-        await ShiftAssignment.update(
-          { id_employee: swap.id_employeeRequested },
-          { where: { id_shiftAssignment: assignment.id_shiftAssignment } }
-        );
+exports.update = (req, res) => {
+  SwapRequest.update(req.body, {
+    where: { id_swapRequest: req.params.id_swapRequest },
+  })
+    .then((num) => {
+      if (num === 1 || (Array.isArray(num) && num[0] === 1)) {
+        return res.send({ message: "SwapRequest updated successfully." });
       }
-    }
-
-    await SwapRequest.update(req.body, {
-      where: { id_swapRequest: req.params.id_swapRequest },
-    });
-    res.send({ message: "SwapRequest updated successfully." });
-  } catch (err) {
-    res.status(500).send({ message: err.message || "Error updating SwapRequest." });
-  }
+      return res
+        .status(404)
+        .send({ message: "SwapRequest not found or body empty." });
+    })
+    .catch((err) =>
+      res.status(500).send({
+        message: err.message || "Error updating SwapRequest.",
+      })
+    );
 };
 
 // Delete a SwapRequest by PK

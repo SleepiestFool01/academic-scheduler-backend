@@ -9,8 +9,6 @@ import db from "./app/models/index.js";
 db.sequelize
   .query("ALTER TABLE `tasks` MODIFY `id_tasklist` INTEGER NULL DEFAULT NULL")
   .catch(() => {})
-  .then(() => db.sequelize.query("ALTER TABLE `swaprequests` MODIFY `id_employeeRequested` INTEGER NULL DEFAULT NULL"))
-  .catch(() => {})
   .then(() => db.sequelize.sync({ alter: true }))
   .catch((err) => { console.error("Sync failed:", err.message); process.exit(1); });
 
