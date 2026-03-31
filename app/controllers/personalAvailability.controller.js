@@ -11,19 +11,7 @@ exports.create = (req, res) => {
     });
   }
 
-  const payload = {
-    id_employee: req.body.id_employee,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    startTime: req.body.startTime,
-    endTime: req.body.endTime,
-    status: req.body.status || "pending",
-    requestType: req.body.requestType || "PTO",
-    duration: req.body.duration || "full",
-    reason: req.body.reason || null,
-  };
-
-  PersonalAvailability.create(payload)
+  PersonalAvailability.create(req.body)
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({
