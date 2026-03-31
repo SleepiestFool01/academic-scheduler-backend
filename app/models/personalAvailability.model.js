@@ -33,6 +33,29 @@ const PersonalAvailability = SequelizeInstance.define("personalAvailability", {
         type: Sequelize.TIME,
         allowNull: false,
     },
+
+    status: {
+        type: Sequelize.ENUM("pending", "approved", "denied"),
+        allowNull: false,
+        defaultValue: "pending",
+    },
+
+    requestType: {
+        type: Sequelize.ENUM("PTO", "Sick", "Unpaid", "Jury Duty"),
+        allowNull: false,
+        defaultValue: "PTO",
+    },
+
+    duration: {
+        type: Sequelize.ENUM("full", "partial"),
+        allowNull: false,
+        defaultValue: "full",
+    },
+
+    reason: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+    },
 });
 
 PersonalAvailability.associate = (models) => {

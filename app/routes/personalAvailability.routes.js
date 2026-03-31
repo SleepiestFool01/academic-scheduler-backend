@@ -4,6 +4,9 @@ import { Router } from "express";
 
 var router = Router();
 
+// Manager view: fetch all personal availability records
+router.get("/", [authenticate], personalAvailability.findAll);
+
 // Create new PersonalAvailability for an employee
 router.post(
   "/employees/:id_employee",
