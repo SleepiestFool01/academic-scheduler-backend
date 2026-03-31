@@ -22,11 +22,11 @@ exports.create = (req, res) => {
 
 // Retrieve all employees (any role)
 exports.findAll = (req, res) => {
-  const { id_employee, id_department } = req.query;
-  const condition = {};
-  if (id_employee)  condition.id_employee  = { [Op.like]: `%${id_employee}%` };
-  if (id_department) condition.id_department = id_department;
-  Employee.findAll({ where: Object.keys(condition).length ? condition : undefined })
+  const id_employee = req.query.id_employee;
+  const condition = id_employee
+    ? { id_employee: { [Op.like]: `%${id_employee}%` } }
+    : null;
+  Employee.findAll({ where: condition })
     .then((data) => res.send(data))
     .catch((err) => res.status(500).send({ message: err.message || "Error retrieving employees." }));
 };

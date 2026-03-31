@@ -4,23 +4,21 @@ const Template = db.template;
 const exports = {};
 
 exports.create = (req, res) => {
-  const { name, description, id_department } = req.body;
+  const { name, description } = req.body;
 
   if (!name) {
     return res.status(400).send({ message: "Missing required field: name." });
   }
 
-  Template.create({ name, description, id_department: id_department ?? null })
+  Template.create({ name, description })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error creating Template." })
     );
 };
 
-exports.findAll = (req, res) => {
-  const { id_department } = req.query;
-  const where = id_department ? { id_department } : undefined;
-  Template.findAll({ where, order: [["createdAt", "DESC"]] })
+exports.findAll = (_req, res) => {
+  Template.findAll({ order: [["createdAt", "DESC"]] })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error retrieving Templates." })

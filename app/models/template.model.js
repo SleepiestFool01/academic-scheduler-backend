@@ -16,11 +16,6 @@ const Template = SequelizeInstance.define("template", {
     allowNull: true,
     defaultValue: "",
   },
-  id_department: {
-    type: Sequelize.INTEGER,
-    allowNull: true,
-    defaultValue: null,
-  },
 });
 
 export default Template;
