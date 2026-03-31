@@ -285,9 +285,9 @@ SwapRequest.belongsTo(Employee, {
   onDelete: "CASCADE",
 });
 SwapRequest.belongsTo(Employee, {
-  foreignKey: { name: "id_employeeRequested", allowNull: true },
+  foreignKey: { name: "id_employeeRequested", allowNull: false },
   as: "requested",
-  constraints: false,
+  onDelete: "CASCADE",
 });
 
 // ManagerDepartment: Manager ↔ Department (multi-dept access)

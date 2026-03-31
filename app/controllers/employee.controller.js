@@ -38,15 +38,14 @@ exports.findAllEmployees = (req, res) => {
     .catch((err) => res.status(500).send({ message: err.message || "Error retrieving employees." }));
 };
 
-// Create a new employee (role defaults to "Employee" if not provided)
+// Create a new employee with role forced to "Employee"
 exports.createEmployee = (req, res) => {
   const employee = {
-    fName:         req.body.fName,
-    lName:         req.body.lName,
-    email:         req.body.email,
-    role:          req.body.role || "Employee",
-    bio:           req.body.bio ?? undefined,
-    id_department: req.body.id_department ?? null,
+    fName: req.body.fName,
+    lName: req.body.lName,
+    email: req.body.email,
+    role:  "Employee",
+    bio:   req.body.bio ?? undefined,
   };
   Employee.create(employee)
     .then((data) => res.send(data))
