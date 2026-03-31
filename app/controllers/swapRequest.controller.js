@@ -7,9 +7,9 @@ const exports = {};
 exports.create = (req, res) => {
   const { id_shift, id_employeeRequester, id_employeeRequested, status } = req.body;
 
-  if (!id_shift || !id_employeeRequester || !id_employeeRequested) {
+  if (!id_shift || !id_employeeRequester) {
     return res.status(400).send({
-      message: "Missing required fields: id_shift, id_employeeRequester, id_employeeRequested.",
+      message: "Missing required fields: id_shift, id_employeeRequester.",
     });
   }
 
