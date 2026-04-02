@@ -15,7 +15,10 @@ db.sequelize
 const app = express();
 
 var corsOptions = {
-  origin: "http://localhost:8081",
+  origin: [
+    "http://localhost:8081",
+    "https://workerscheduling.eaglesoftwareteam.com",
+  ],
   credentials: true,
 };
 app.use(cors(corsOptions));
