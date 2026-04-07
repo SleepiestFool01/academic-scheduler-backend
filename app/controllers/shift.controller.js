@@ -3,8 +3,10 @@ import db from "../models/index.js";
 const Shift = db.shift;
 const exports = {};
 
-// Create and save a new Shift
-exports.create = (req, res) => {
+// Create and save a new Shift.
+// If the shift has an id_position, automatically assigns any TaskLists linked
+// to that Position via the PositionTaskList bridge table.
+exports.create = async (req, res) => {
   const { name, description, day, date, startTime, endTime, id_position, id_department } = req.body;
 
   if (!name || !startTime || !endTime) {
@@ -13,13 +15,49 @@ exports.create = (req, res) => {
     });
   }
 
-  Shift.create({ name, description, day, date, startTime, endTime, id_position: id_position ?? null, id_department: id_department ?? null })
-    .then((data) => res.status(201).send(data))
-    .catch((err) =>
-      res.status(500).send({
-        message: err.message || "Error creating Shift.",
-      })
-    );
+  try {
+    const shift = await Shift.create({
+      name, description, day, date, startTime, endTime,
+      id_position:   id_position   ?? null,
+      id_department: id_department ?? null,
+    });
+
+    // Auto-assign task lists linked to this position
+    if (id_position) {
+      const positionTaskLists = await db.positionTaskList.findAll({
+        where: { id_position },
+      });
+
+      for (const ptl of positionTaskLists) {
+        const existing = await db.shiftTaskList.findOne({
+          where: { id_shift: shift.id_shift, id_taskList: ptl.id_taskList },
+        });
+        if (existing) continue;
+
+        const stl = await db.shiftTaskList.create({
+          id_shift:    shift.id_shift,
+          id_taskList: ptl.id_taskList,
+        });
+
+        const tasks = await db.task.findAll({ where: { id_taskList: ptl.id_taskList } });
+        if (tasks.length > 0) {
+          await db.shiftTaskListStatus.bulkCreate(
+            tasks.map((t) => ({
+              id_shiftTaskList: stl.id_shiftTaskList,
+              id_task:          t.id_task,
+              isCompleted:      false,
+            }))
+          );
+        }
+      }
+    }
+
+    res.status(201).send(shift);
+  } catch (err) {
+    res.status(500).send({
+      message: err.message || "Error creating Shift.",
+    });
+  }
 };
 
 // Retrieve all Shifts

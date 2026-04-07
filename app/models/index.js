@@ -10,6 +10,7 @@ import Event from "./event.model.js";
 import PersonalAvailability from "./personalAvailability.model.js";
 import Position from "./position.model.js";
 import PositionEmployee from "./positionEmployee.model.js";
+import PositionTaskList from "./positionTaskList.model.js";
 import Session from "./session.model.js";
 import Setting from "./setting.model.js";
 import SettingValue from "./settingValue.model.js";
@@ -40,6 +41,7 @@ db.event = Event;
 db.personalAvailability = PersonalAvailability;
 db.position = Position;
 db.positionEmployee = PositionEmployee;
+db.positionTaskList = PositionTaskList;
 db.session = Session;
 db.setting = Setting;
 db.settingValue = SettingValue;
@@ -146,6 +148,27 @@ SettingValue.belongsTo(Department, {
 Department.hasMany(SettingValue, {
   foreignKey: { name: "id_department", allowNull: false },
   as: "settingValues",
+});
+
+// Position ↔ TaskList (bridge: auto-assigns task lists to shifts with this position)
+PositionTaskList.belongsTo(Position, {
+  foreignKey: { name: "id_position", allowNull: false },
+  as: "position",
+  onDelete: "CASCADE",
+});
+Position.hasMany(PositionTaskList, {
+  foreignKey: { name: "id_position", allowNull: false },
+  as: "taskListLinks",
+});
+
+PositionTaskList.belongsTo(TaskList, {
+  foreignKey: { name: "id_taskList", allowNull: false },
+  as: "taskList",
+  onDelete: "CASCADE",
+});
+TaskList.hasMany(PositionTaskList, {
+  foreignKey: { name: "id_taskList", allowNull: false },
+  as: "positionLinks",
 });
 
 // Position ↔ Employee (assignment bridge)
