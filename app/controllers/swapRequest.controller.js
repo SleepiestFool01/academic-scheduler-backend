@@ -1,6 +1,7 @@
 import db from "../models/index.js";
 
 const SwapRequest = db.swapRequest;
+const ShiftAssignment = db.shiftAssignment;
 const exports = {};
 
 // Create and save a new SwapRequest
@@ -53,23 +54,49 @@ exports.findOne = (req, res) => {
 };
 
 // Update a SwapRequest by PK
-exports.update = (req, res) => {
-  SwapRequest.update(req.body, {
-    where: { id_swapRequest: req.params.id_swapRequest },
-  })
-    .then((num) => {
-      if (num === 1 || (Array.isArray(num) && num[0] === 1)) {
-        return res.send({ message: "SwapRequest updated successfully." });
+exports.update = async (req, res) => {
+  try {
+    const id_swapRequest = req.params.id_swapRequest;
+    const swap = await SwapRequest.findByPk(id_swapRequest);
+    if (!swap) {
+      return res.status(404).send({ message: "SwapRequest not found." });
+    }
+
+    await swap.update(req.body);
+
+    // When a manager approves the swap, actually reassign the shift from
+    // the requester to the requested employee.
+    if (req.body.status === "Approved") {
+      const targetEmployee = swap.id_employeeRequested;
+      if (!targetEmployee) {
+        return res.status(400).send({
+          message: "Cannot approve swap: no employee has claimed this shift.",
+        });
       }
-      return res
-        .status(404)
-        .send({ message: "SwapRequest not found or body empty." });
-    })
-    .catch((err) =>
-      res.status(500).send({
-        message: err.message || "Error updating SwapRequest.",
-      })
-    );
+
+      const assignment = await ShiftAssignment.findOne({
+        where: {
+          id_shift: swap.id_shift,
+          id_employee: swap.id_employeeRequester,
+        },
+      });
+
+      if (!assignment) {
+        return res.status(404).send({
+          message: "Shift assignment for requester not found.",
+        });
+      }
+
+      assignment.id_employee = targetEmployee;
+      await assignment.save();
+    }
+
+    return res.send({ message: "SwapRequest updated successfully." });
+  } catch (err) {
+    return res.status(500).send({
+      message: err.message || "Error updating SwapRequest.",
+    });
+  }
 };
 
 // Delete a SwapRequest by PK
