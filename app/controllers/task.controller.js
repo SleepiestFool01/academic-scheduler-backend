@@ -8,9 +8,9 @@ const exports = {};
 exports.create = (req, res) => {
   const { name, description, id_taskList } = req.body;
 
-  if (!name || !description) {
+  if (!name) {
     return res.status(400).send({
-      message: "Missing required fields: name, description.",
+      message: "Missing required field: name.",
     });
   }
 
