@@ -2,7 +2,35 @@ import db from "../models/index.js";
 
 const SwapRequest = db.swapRequest;
 const ShiftAssignment = db.shiftAssignment;
+const Shift = db.shift;
+const PositionEmployee = db.positionEmployee;
 const exports = {};
+
+// Verify the given employee is qualified for the position attached to the
+// given shift. Returns { ok: true } when allowed, otherwise an object with
+// `status` and `message` describing why the action should be rejected.
+// Shifts with no id_position are treated as unrestricted.
+async function checkEmployeeQualifiedForShift(id_shift, id_employee) {
+  const shift = await Shift.findByPk(id_shift);
+  if (!shift) {
+    return { ok: false, status: 404, message: "Shift not found." };
+  }
+  if (shift.id_position == null) {
+    return { ok: true };
+  }
+  const qualified = await PositionEmployee.findOne({
+    where: { id_position: shift.id_position, id_employee },
+  });
+  if (!qualified) {
+    return {
+      ok: false,
+      status: 403,
+      message:
+        "Employee is not assigned to this shift's position and cannot take it.",
+    };
+  }
+  return { ok: true };
+}
 
 // Create and save a new SwapRequest
 exports.create = (req, res) => {
@@ -60,6 +88,44 @@ exports.update = async (req, res) => {
     const swap = await SwapRequest.findByPk(id_swapRequest);
     if (!swap) {
       return res.status(404).send({ message: "SwapRequest not found." });
+    }
+
+    // If an employee is claiming this shift (id_employeeRequested is being
+    // set in the request body), verify they are qualified for the shift's
+    // position before persisting anything.
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, "id_employeeRequested") &&
+      req.body.id_employeeRequested != null
+    ) {
+      const check = await checkEmployeeQualifiedForShift(
+        swap.id_shift,
+        req.body.id_employeeRequested
+      );
+      if (!check.ok) {
+        return res.status(check.status).send({ message: check.message });
+      }
+    }
+
+    // If a manager is approving the swap, re-verify the claimant is still
+    // qualified (a manager could have removed them from the position
+    // between claim and approval).
+    if (req.body.status === "Approved") {
+      const targetEmployee =
+        req.body.id_employeeRequested != null
+          ? req.body.id_employeeRequested
+          : swap.id_employeeRequested;
+      if (!targetEmployee) {
+        return res.status(400).send({
+          message: "Cannot approve swap: no employee has claimed this shift.",
+        });
+      }
+      const check = await checkEmployeeQualifiedForShift(
+        swap.id_shift,
+        targetEmployee
+      );
+      if (!check.ok) {
+        return res.status(check.status).send({ message: check.message });
+      }
     }
 
     await swap.update(req.body);
