@@ -2,6 +2,7 @@ import db from "../models/index.js";
 
 const DepartmentAccessRequest = db.departmentAccessRequest;
 const ManagerDepartment        = db.managerDepartment;
+const EmployeeDepartment       = db.employeeDepartment;
 const Employee                 = db.employee;
 const exports = {};
 
@@ -48,23 +49,84 @@ exports.findOne = async (req, res) => {
     }
 };
 
-// Update a request — when Approved, also create a ManagerDepartment record
+// Update a request — when Approved, also create the appropriate junction
+// row. Authorization rules:
+//   • Admins may approve or deny anything.
+//   • Managers may approve or deny *Employee* requests targeting departments
+//     they currently manage. They may not approve manager-to-manager
+//     requests — those still require an Admin.
 exports.update = async (req, res) => {
     try {
         const id = req.params.id_departmentAccessRequest;
 
+        if (req.body.status === "Approved" || req.body.status === "Denied") {
+            if (!req.user) {
+                return res.status(401).send({ message: "Unauthorized." });
+            }
+
+            if (req.user.role !== "Admin") {
+                // Only Admins are unconditionally allowed. Managers may
+                // approve only employee requests for their own departments.
+                if (req.user.role !== "Manager") {
+                    return res.status(403).send({
+                        message: "You are not permitted to approve or deny department access requests.",
+                    });
+                }
+
+                const request = await DepartmentAccessRequest.findByPk(id);
+                if (!request) return res.status(404).send({ message: "DepartmentAccessRequest not found." });
+
+                const requester = await Employee.findByPk(request.id_employeeRequester);
+                const requesterIsEmployee =
+                    requester && requester.role !== "Manager" && requester.role !== "Admin";
+                if (!requesterIsEmployee) {
+                    return res.status(403).send({
+                        message: "Only Admins may approve or deny manager-level department access requests.",
+                    });
+                }
+
+                const managesDept = await ManagerDepartment.findOne({
+                    where: { id_employee: req.user.id_employee, id_department: request.id_department },
+                });
+                if (!managesDept) {
+                    return res.status(403).send({
+                        message: "You may only approve requests for departments you manage.",
+                    });
+                }
+            }
+        }
+
         if (req.body.status === "Approved") {
             const request = await DepartmentAccessRequest.findByPk(id);
             if (request) {
-                // Grant access via junction table
-                const existing = await ManagerDepartment.findOne({
-                    where: { id_employee: request.id_employeeRequester, id_department: request.id_department },
-                });
-                if (!existing) {
-                    await ManagerDepartment.create({
-                        id_employee:   request.id_employeeRequester,
-                        id_department: request.id_department,
+                // Look up the requester to decide which junction table to
+                // write into. Managers/Admins go in managerDepartment;
+                // regular Employees go in employeeDepartment so the access
+                // is tracked separately and they don't gain manager rights.
+                const requester = await Employee.findByPk(request.id_employeeRequester);
+                const isManagerRequester =
+                    requester && (requester.role === "Manager" || requester.role === "Admin");
+
+                if (isManagerRequester) {
+                    const existing = await ManagerDepartment.findOne({
+                        where: { id_employee: request.id_employeeRequester, id_department: request.id_department },
                     });
+                    if (!existing) {
+                        await ManagerDepartment.create({
+                            id_employee:   request.id_employeeRequester,
+                            id_department: request.id_department,
+                        });
+                    }
+                } else {
+                    const existing = await EmployeeDepartment.findOne({
+                        where: { id_employee: request.id_employeeRequester, id_department: request.id_department },
+                    });
+                    if (!existing) {
+                        await EmployeeDepartment.create({
+                            id_employee:   request.id_employeeRequester,
+                            id_department: request.id_department,
+                        });
+                    }
                 }
             }
         }

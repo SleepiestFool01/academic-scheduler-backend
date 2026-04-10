@@ -4,6 +4,20 @@ import { Router } from "express";
 
 var router = Router();
 
+// Retrieve all PersonalAvailability records (used by the Requests page)
+router.get(
+  "/",
+  [authenticate],
+  personalAvailability.findAll
+);
+
+// Delete a PersonalAvailability record by id (no employee in path)
+router.delete(
+  "/:id_personalAvailability",
+  [authenticate],
+  personalAvailability.delete
+);
+
 // Create new PersonalAvailability for an employee
 router.post(
   "/employees/:id_employee",
