@@ -1,9 +1,16 @@
 import db from "../models/index.js";
+import { sendEmail } from "../utils/mailer.js";
+import {
+  deptAccessRequestedEmail,
+  deptAccessApprovedEmail,
+  deptAccessDeniedEmail,
+} from "../utils/emailTemplates.js";
 
 const DepartmentAccessRequest = db.departmentAccessRequest;
 const ManagerDepartment        = db.managerDepartment;
 const EmployeeDepartment       = db.employeeDepartment;
 const Employee                 = db.employee;
+const Department               = db.department;
 const exports = {};
 
 // Create a new request
@@ -18,7 +25,41 @@ exports.create = async (req, res) => {
             id_department,
             message: message || null,
         });
-        return res.status(201).send(data);
+        res.status(201).send(data);
+
+        // Notify admins + managers of the target department (non-blocking)
+        try {
+            const [requester, dept] = await Promise.all([
+                Employee.findByPk(id_employeeRequester),
+                Department.findByPk(id_department),
+            ]);
+            const requesterName = requester ? `${requester.fName} ${requester.lName}` : "Unknown";
+            const deptName = dept ? dept.name : "Unknown";
+
+            // Find managers of this department
+            const mgrDepts = await ManagerDepartment.findAll({ where: { id_department } });
+            const mgrIds = mgrDepts.map((md) => md.id_employee);
+
+            // Also find all Admins
+            const admins = await Employee.findAll({ where: { role: "Admin" } });
+            const adminIds = admins.map((a) => a.id_employee);
+
+            // Combine unique IDs
+            const recipientIds = [...new Set([...mgrIds, ...adminIds])];
+            if (recipientIds.length) {
+                const recipients = await Employee.findAll({ where: { id_employee: recipientIds } });
+                for (const r of recipients) {
+                    sendEmail(
+                        r.email,
+                        "New department access request",
+                        deptAccessRequestedEmail(`${r.fName} ${r.lName}`, requesterName, deptName)
+                    ).catch(console.error);
+                }
+            }
+        } catch (emailErr) {
+            console.error("[deptAccessRequest.create] Email notification error:", emailErr.message);
+        }
+        return;
     } catch (err) {
         return res.status(500).send({ message: err.message || "Error creating DepartmentAccessRequest." });
     }
@@ -134,8 +175,37 @@ exports.update = async (req, res) => {
         const [num] = await DepartmentAccessRequest.update(req.body, {
             where: { id_departmentAccessRequest: id },
         });
-        if (num === 1) return res.send({ message: "DepartmentAccessRequest updated successfully." });
-        return res.status(404).send({ message: "DepartmentAccessRequest not found or body empty." });
+        if (num !== 1) {
+            return res.status(404).send({ message: "DepartmentAccessRequest not found or body empty." });
+        }
+
+        // Send approved/denied email to the requester (non-blocking)
+        if (req.body.status === "Approved" || req.body.status === "Denied") {
+            try {
+                const reqRecord = await DepartmentAccessRequest.findByPk(id);
+                if (reqRecord) {
+                    const [requester, dept] = await Promise.all([
+                        Employee.findByPk(reqRecord.id_employeeRequester),
+                        Department.findByPk(reqRecord.id_department),
+                    ]);
+                    if (requester && dept) {
+                        const name = `${requester.fName} ${requester.lName}`;
+                        const template = req.body.status === "Approved"
+                            ? deptAccessApprovedEmail(name, dept.name)
+                            : deptAccessDeniedEmail(name, dept.name);
+                        sendEmail(
+                            requester.email,
+                            `Department access ${req.body.status.toLowerCase()}`,
+                            template
+                        ).catch(console.error);
+                    }
+                }
+            } catch (emailErr) {
+                console.error("[deptAccessRequest.update] Email notification error:", emailErr.message);
+            }
+        }
+
+        return res.send({ message: "DepartmentAccessRequest updated successfully." });
     } catch (err) {
         return res.status(500).send({ message: err.message || "Error updating DepartmentAccessRequest." });
     }
