@@ -19,6 +19,8 @@ jobs:
       PORT: ${{ secrets.PORT }}
       CLIENT_ID: ${{secrets.CLIENT_ID}}
       CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
+      EMAIL_USER: ${{secrets.EMAIL_USER}}
+      EMAIL_PASS: ${{secrets.EMAIL_PASS}}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -37,6 +39,8 @@ jobs:
           echo PORT =  "$PORT" >> .env
           echo CLIENT_ID = "$CLIENT_ID" >> .env
           echo CLIENT_SECRET = "$CLIENT_SECRET" >> .env
+          echo EMAIL_USER: "$EMAIL_USER" >> .env
+          echo EMAIL_PASS: "$EMAIL_PASS" >> .env
 
       - run: npm run bundle
 
