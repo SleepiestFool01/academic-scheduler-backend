@@ -1,8 +1,18 @@
 import db from "../models/index.js";
+import { sendEmail } from "../utils/mailer.js";
+import {
+  swapPostedEmail,
+  swapClaimedEmail,
+  swapApprovedEmail,
+  swapDeniedEmail,
+} from "../utils/emailTemplates.js";
 
 const SwapRequest = db.swapRequest;
 const ShiftAssignment = db.shiftAssignment;
 const Shift = db.shift;
+const Position = db.position;
+const Employee = db.employee;
+const ManagerDepartment = db.managerDepartment;
 const PositionEmployee = db.positionEmployee;
 const exports = {};
 
@@ -48,7 +58,42 @@ exports.create = (req, res) => {
     id_employeeRequested,
     status, // optional; defaults to model default if not provided
   })
-    .then((data) => res.status(201).send(data))
+    .then(async (data) => {
+      res.status(201).send(data);
+
+      // Notify managers of the shift's department about the tradeboard posting
+      try {
+        const [shift, poster] = await Promise.all([
+          Shift.findByPk(id_shift),
+          Employee.findByPk(id_employeeRequester),
+        ]);
+        if (shift && poster && shift.id_department) {
+          const pos = shift.id_position ? await Position.findByPk(shift.id_position) : null;
+          const mgrDepts = await ManagerDepartment.findAll({
+            where: { id_department: shift.id_department },
+          });
+          const mgrIds = mgrDepts.map((md) => md.id_employee);
+          if (mgrIds.length) {
+            const managers = await Employee.findAll({ where: { id_employee: mgrIds } });
+            for (const mgr of managers) {
+              sendEmail(
+                mgr.email,
+                "Shift posted to tradeboard",
+                swapPostedEmail(
+                  `${mgr.fName} ${mgr.lName}`,
+                  `${poster.fName} ${poster.lName}`,
+                  shift.date || "N/A",
+                  shift.startTime,
+                  pos ? pos.name : null
+                )
+              ).catch(console.error);
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("[swapRequest.create] Email notification error:", emailErr.message);
+      }
+    })
     .catch((err) =>
       res.status(500).send({
         message: err.message || "Error creating SwapRequest.",
@@ -155,6 +200,75 @@ exports.update = async (req, res) => {
 
       assignment.id_employee = targetEmployee;
       await assignment.save();
+    }
+
+    // ── Email notifications (non-blocking) ──
+    try {
+      const shift = await Shift.findByPk(swap.id_shift);
+      const pos = shift && shift.id_position ? await Position.findByPk(shift.id_position) : null;
+      const posName = pos ? pos.name : null;
+      const shiftTime = shift ? shift.startTime : "N/A";
+      const shiftDate = shift ? (shift.date || "N/A") : "N/A";
+
+      // Claimed: notify the original poster
+      if (
+        Object.prototype.hasOwnProperty.call(req.body, "id_employeeRequested") &&
+        req.body.id_employeeRequested != null
+      ) {
+        const [poster, claimer] = await Promise.all([
+          Employee.findByPk(swap.id_employeeRequester),
+          Employee.findByPk(req.body.id_employeeRequested),
+        ]);
+        if (poster && claimer) {
+          sendEmail(
+            poster.email,
+            "Your shift was claimed",
+            swapClaimedEmail(
+              `${poster.fName} ${poster.lName}`,
+              `${claimer.fName} ${claimer.lName}`,
+              shiftDate,
+              shiftTime,
+              posName
+            )
+          ).catch(console.error);
+        }
+      }
+
+      // Approved: notify both employees
+      if (req.body.status === "Approved") {
+        const [requester, requested] = await Promise.all([
+          Employee.findByPk(swap.id_employeeRequester),
+          Employee.findByPk(swap.id_employeeRequested),
+        ]);
+        if (requester) {
+          sendEmail(
+            requester.email,
+            "Swap approved",
+            swapApprovedEmail(`${requester.fName} ${requester.lName}`, shiftDate, shiftTime, posName)
+          ).catch(console.error);
+        }
+        if (requested) {
+          sendEmail(
+            requested.email,
+            "Swap approved",
+            swapApprovedEmail(`${requested.fName} ${requested.lName}`, shiftDate, shiftTime, posName)
+          ).catch(console.error);
+        }
+      }
+
+      // Denied: notify the requester
+      if (req.body.status === "Denied") {
+        const requester = await Employee.findByPk(swap.id_employeeRequester);
+        if (requester) {
+          sendEmail(
+            requester.email,
+            "Swap denied",
+            swapDeniedEmail(`${requester.fName} ${requester.lName}`, shiftDate, shiftTime, posName)
+          ).catch(console.error);
+        }
+      }
+    } catch (emailErr) {
+      console.error("[swapRequest.update] Email notification error:", emailErr.message);
     }
 
     return res.send({ message: "SwapRequest updated successfully." });

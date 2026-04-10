@@ -2,6 +2,7 @@ import routes from "./app/routes/index.js";
 import express from "express";
 import cors from "cors";
 import db from "./app/models/index.js";
+import { startShiftReminders } from "./app/cron/shiftReminders.js";
 
 // Pre-sync migration: make tasks.id_tasklist nullable so Sequelize can add the
 // ON DELETE SET NULL FK constraint (MySQL rejects SET NULL on a NOT NULL column).
@@ -36,6 +37,7 @@ const PORT = process.env.PORT || 3129;
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
+    startShiftReminders();
   });
 }
 

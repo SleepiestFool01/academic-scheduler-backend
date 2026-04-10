@@ -1,6 +1,10 @@
 import db from "../models/index.js";
+import { sendEmail } from "../utils/mailer.js";
+import { timeOffRequestedEmail } from "../utils/emailTemplates.js";
 
-const PersonalAvailability = db.personalAvailability
+const PersonalAvailability = db.personalAvailability;
+const Employee = db.employee;
+const ManagerDepartment = db.managerDepartment;
 const exports = {};
 
 // Create and Save a new Personal Availability
@@ -12,7 +16,37 @@ exports.create = (req, res) => {
   }
 
   PersonalAvailability.create(req.body)
-    .then((data) => res.status(201).send(data))
+    .then(async (data) => {
+      res.status(201).send(data);
+
+      // Notify managers of the employee's department about the time-off request
+      try {
+        const emp = await Employee.findByPk(req.body.id_employee);
+        if (emp && emp.id_department) {
+          const mgrDepts = await ManagerDepartment.findAll({
+            where: { id_department: emp.id_department },
+          });
+          const mgrIds = mgrDepts.map((md) => md.id_employee);
+          if (mgrIds.length) {
+            const managers = await Employee.findAll({ where: { id_employee: mgrIds } });
+            for (const mgr of managers) {
+              sendEmail(
+                mgr.email,
+                "New time-off request",
+                timeOffRequestedEmail(
+                  `${mgr.fName} ${mgr.lName}`,
+                  `${emp.fName} ${emp.lName}`,
+                  req.body.startDate,
+                  req.body.endDate
+                )
+              ).catch(console.error);
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("[personalAvailability.create] Email notification error:", emailErr.message);
+      }
+    })
     .catch((err) =>
       res.status(500).send({
         message: err.message || "Error creating Personal Availability.",
