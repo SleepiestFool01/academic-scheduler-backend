@@ -26,7 +26,7 @@ function fmtTime(raw) {
   return `${h}:${m} ${ampm}`;
 }
 
-const FONT_STACK = "'DM Sans', 'Segoe UI', Roboto, Arial, sans-serif";
+const FONT_STACK = "'Satoshi', 'Segoe UI', Roboto, Arial, sans-serif";
 const BG_DARK = "#0d0d14";
 const BG_CARD = "#13131f";
 const ACCENT = "#FF1744";
