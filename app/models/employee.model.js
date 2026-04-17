@@ -31,7 +31,7 @@ const Employee = SequelizeInstance.define("employee", {
     bio: {
         type: Sequelize.TEXT,
         allowNull: true,
-        defaultValue: "Share your goals, experience, or anything your coach should know.",
+        defaultValue: "Add any notes that help managers schedule and support this employee.",
     },
     color: {
         type: Sequelize.STRING,
