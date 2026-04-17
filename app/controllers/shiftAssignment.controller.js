@@ -1,6 +1,7 @@
 import db from "../models/index.js";
 import { sendEmail } from "../utils/mailer.js";
 import { shiftAssignedEmail } from "../utils/emailTemplates.js";
+import { assertEmployeeAvailableForShift } from "../utils/availability.js";
 
 const ShiftAssignment = db.shiftAssignment;
 const Employee = db.employee;
@@ -18,8 +19,15 @@ exports.create = (req, res) => {
     });
   }
 
-  ShiftAssignment.create({ id_employee, id_shift, date })
-    .then(async (data) => {
+  assertEmployeeAvailableForShift(id_employee, id_shift, date)
+    .then(async (availabilityCheck) => {
+      if (!availabilityCheck.ok) {
+        return res
+          .status(availabilityCheck.status)
+          .send({ message: availabilityCheck.message });
+      }
+
+      const data = await ShiftAssignment.create({ id_employee, id_shift, date });
       res.status(201).send(data);
 
       // Send shift-assigned email (non-blocking, errors swallowed)
@@ -80,16 +88,31 @@ exports.findOne = (req, res) => {
 
 // Update a ShiftAssignment by PK
 exports.update = (req, res) => {
-  ShiftAssignment.update(req.body, {
-    where: { id_shiftAssignment: req.params.id_shiftAssignment },
-  })
-    .then((num) => {
-      if (num === 1 || (Array.isArray(num) && num[0] === 1)) {
-        return res.send({ message: "ShiftAssignment updated successfully." });
+  ShiftAssignment.findByPk(req.params.id_shiftAssignment)
+    .then(async (assignment) => {
+      if (!assignment) {
+        return res
+          .status(404)
+          .send({ message: "ShiftAssignment not found or body empty." });
       }
-      return res
-        .status(404)
-        .send({ message: "ShiftAssignment not found or body empty." });
+
+      const nextEmployee = req.body.id_employee ?? assignment.id_employee;
+      const nextShift = req.body.id_shift ?? assignment.id_shift;
+      const nextDate = req.body.date ?? assignment.date;
+
+      const availabilityCheck = await assertEmployeeAvailableForShift(
+        nextEmployee,
+        nextShift,
+        nextDate
+      );
+      if (!availabilityCheck.ok) {
+        return res
+          .status(availabilityCheck.status)
+          .send({ message: availabilityCheck.message });
+      }
+
+      await assignment.update(req.body);
+      return res.send({ message: "ShiftAssignment updated successfully." });
     })
     .catch((err) =>
       res.status(500).send({
