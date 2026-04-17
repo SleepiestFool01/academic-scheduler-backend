@@ -1,6 +1,10 @@
 import db from "../models/index.js";
 import { sendEmail } from "../utils/mailer.js";
 import { timeOffRequestedEmail } from "../utils/emailTemplates.js";
+import {
+  normalizeAvailabilityStatus,
+  releaseAssignmentsForAvailability,
+} from "../utils/availability.js";
 
 const PersonalAvailability = db.personalAvailability;
 const Employee = db.employee;
@@ -9,19 +13,33 @@ const exports = {};
 
 // Create and Save a new Personal Availability
 exports.create = (req, res) => {
-  if (!req.body.id_employee || !req.body.startDate || !req.body.endDate || !req.body.startTime || !req.body.endTime) {
+  const id_employee = Number(req.params.id_employee || req.body.id_employee);
+
+  if (!id_employee || !req.body.startDate || !req.body.endDate || !req.body.startTime || !req.body.endTime) {
     return res.status(400).send({
       message: "Missing required fields: id_employee, startDate, endDate, startTime, endTime.",
     });
   }
 
-  PersonalAvailability.create(req.body)
+  const payload = {
+    id_employee,
+    startDate: req.body.startDate,
+    endDate: req.body.endDate,
+    startTime: req.body.startTime,
+    endTime: req.body.endTime,
+    status: normalizeAvailabilityStatus(req.body.status),
+  };
+
+  PersonalAvailability.create(payload)
     .then(async (data) => {
       res.status(201).send(data);
 
       // Notify managers of the employee's department about the time-off request
       try {
-        const emp = await Employee.findByPk(req.body.id_employee);
+        const emp = await Employee.findByPk(id_employee);
+        if (data.status === "Approved") {
+          await releaseAssignmentsForAvailability(data);
+        }
         if (emp && emp.id_department) {
           const mgrDepts = await ManagerDepartment.findAll({
             where: { id_department: emp.id_department },
@@ -97,17 +115,33 @@ exports.findOne = (req, res) => {
 
 // Update a Personal Availability
 exports.update = (req, res) => {
-  PersonalAvailability.update(req.body, {
-    where: { id_personalAvailability: req.params.id_personalAvailability },
-  })
-    .then((num) => {
-      if (num === 1) {
-        res.send({ message: "Personal Availability updated successfully." });
-      } else {
-        res.status(404).send({
+  PersonalAvailability.findByPk(req.params.id_personalAvailability)
+    .then(async (availability) => {
+      if (!availability) {
+        return res.status(404).send({
           message: "Personal Availability not found or body empty.",
         });
       }
+
+      const nextValues = {
+        ...req.body,
+      };
+      if (Object.prototype.hasOwnProperty.call(nextValues, "status")) {
+        nextValues.status = normalizeAvailabilityStatus(nextValues.status);
+      }
+
+      await availability.update(nextValues);
+
+      let releasedAssignments = [];
+      if (availability.status === "Approved") {
+        releasedAssignments = await releaseAssignmentsForAvailability(availability);
+      }
+
+      return res.send({
+        message: "Personal Availability updated successfully.",
+        data: availability,
+        releasedAssignments,
+      });
     })
     .catch((err) =>
       res.status(500).send({

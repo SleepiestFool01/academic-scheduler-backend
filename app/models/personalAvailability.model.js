@@ -33,6 +33,12 @@ const PersonalAvailability = SequelizeInstance.define("personalAvailability", {
         type: Sequelize.TIME,
         allowNull: false,
     },
+
+    status: {
+        type: Sequelize.ENUM("Pending", "Approved", "Denied"),
+        allowNull: false,
+        defaultValue: "Pending",
+    },
 });
 
 PersonalAvailability.associate = (models) => {
