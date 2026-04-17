@@ -1,6 +1,7 @@
 import { Router } from "express";
 import taskList from "../controllers/taskList.controller.js";
 import authenticate from "../authorization/authorization.js";
+import requireAnyDepartment from "../authorization/requireAnyDepartment.js";
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
 router.post("/", [authenticate], taskList.create);
 
 // Retrieve all TaskLists
-router.get("/", [authenticate], taskList.findAll);
+router.get("/", [authenticate, requireAnyDepartment], taskList.findAll);
 
 // Retrieve a single TaskList
 router.get("/:id_taskList", [authenticate], taskList.findOne);

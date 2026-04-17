@@ -20,6 +20,26 @@ exports.create = async (req, res) => {
         if (!id_employeeRequester || !id_department) {
             return res.status(400).send({ message: "Missing required fields: id_employeeRequester, id_department." });
         }
+
+        // Product rule: an unaffiliated employee (not yet added to any
+        // department by a manager) must wait to be added to their first
+        // department before they can request access to others. This
+        // prevents brand-new sign-ins from spamming request-access.
+        const requester = await Employee.findByPk(id_employeeRequester);
+        if (!requester) return res.status(404).send({ message: "Requester not found." });
+        const isAdminOrManager = requester.role === "Admin" || requester.role === "Manager";
+        if (!isAdminOrManager && requester.id_department == null) {
+            const [mgr, emp] = await Promise.all([
+                ManagerDepartment.findOne({ where: { id_employee: id_employeeRequester } }),
+                EmployeeDepartment.findOne({ where: { id_employee: id_employeeRequester } }),
+            ]);
+            if (!mgr && !emp) {
+                return res.status(403).send({
+                    message: "You must be added to a department by a manager before you can request access to others.",
+                });
+            }
+        }
+
         const data = await DepartmentAccessRequest.create({
             id_employeeRequester,
             id_department,
@@ -168,6 +188,19 @@ exports.update = async (req, res) => {
                             id_department: request.id_department,
                         });
                     }
+                }
+
+                // Match the "Add Employee" path: if the requester has no
+                // primary id_department yet, adopt the one they were just
+                // approved for so both add-flows (manager-initiated and
+                // employee-initiated) produce identical DB state. Never
+                // clobber a non-null primary — that belongs to whichever
+                // dept hired them first.
+                if (requester && requester.id_department == null) {
+                    await Employee.update(
+                        { id_department: request.id_department },
+                        { where: { id_employee: request.id_employeeRequester } }
+                    );
                 }
             }
         }

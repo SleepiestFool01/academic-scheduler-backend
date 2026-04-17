@@ -1,5 +1,6 @@
 import personalAvailability from "../controllers/personalAvailability.controller.js";
 import authenticate from "../authorization/authorization.js";
+import requireAnyDepartment from "../authorization/requireAnyDepartment.js";
 import { Router } from "express";
 
 var router = Router();
@@ -7,7 +8,7 @@ var router = Router();
 // Retrieve all PersonalAvailability records (used by the Requests page)
 router.get(
   "/",
-  [authenticate],
+  [authenticate, requireAnyDepartment],
   personalAvailability.findAll
 );
 
