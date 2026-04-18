@@ -9,9 +9,11 @@ const Shift = db.shift;
 const Position = db.position;
 const exports = {};
 
-// Create and save a new ShiftAssignment
+// Create and save a new ShiftAssignment. Pass `force: true` in the body
+// to bypass a soft unavailability conflict after the caller has confirmed
+// with the user. Approved time-off is always enforced regardless of force.
 exports.create = (req, res) => {
-  const { id_employee, id_shift, date } = req.body;
+  const { id_employee, id_shift, date, force } = req.body;
 
   if (!id_employee || !id_shift || !date) {
     return res.status(400).send({
@@ -19,12 +21,17 @@ exports.create = (req, res) => {
     });
   }
 
-  assertEmployeeAvailableForShift(id_employee, id_shift, date)
+  assertEmployeeAvailableForShift(id_employee, id_shift, date, { bypassUnavailability: !!force })
     .then(async (availabilityCheck) => {
       if (!availabilityCheck.ok) {
         return res
           .status(availabilityCheck.status)
-          .send({ message: availabilityCheck.message });
+          .send({
+            message: availabilityCheck.message,
+            code: availabilityCheck.code,
+            overridable: !!availabilityCheck.overridable,
+            unavailabilityLabel: availabilityCheck.unavailabilityLabel || null,
+          });
       }
 
       const data = await ShiftAssignment.create({ id_employee, id_shift, date });
@@ -103,15 +110,23 @@ exports.update = (req, res) => {
       const availabilityCheck = await assertEmployeeAvailableForShift(
         nextEmployee,
         nextShift,
-        nextDate
+        nextDate,
+        { bypassUnavailability: !!req.body.force }
       );
       if (!availabilityCheck.ok) {
         return res
           .status(availabilityCheck.status)
-          .send({ message: availabilityCheck.message });
+          .send({
+            message: availabilityCheck.message,
+            code: availabilityCheck.code,
+            overridable: !!availabilityCheck.overridable,
+            unavailabilityLabel: availabilityCheck.unavailabilityLabel || null,
+          });
       }
 
-      await assignment.update(req.body);
+      // Strip `force` before persisting so it never lands in the DB row.
+      const { force, ...patch } = req.body;
+      await assignment.update(patch);
       return res.send({ message: "ShiftAssignment updated successfully." });
     })
     .catch((err) =>
