@@ -7,9 +7,26 @@ const Shift                  = db.shift;
 const SwapRequest            = db.swapRequest;
 const SettingValue           = db.settingValue;
 const Setting                = db.setting;
+const Semester               = db.semester;
 const Op                     = db.Sequelize.Op;
 
 const DAY_NAMES_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// Compare an activeSeason setting ("Fall" or "Fall 2026") to a row's
+// season ("Spring 2026"). Matches on semester name + year, year optional
+// on either side so "Fall" still matches "Fall 2026" but not
+// "Spring 2026". Returning true when `activeSeason` is empty is the
+// lenient fallback — same rule the frontend uses.
+function seasonsMatch(activeSeason, rowSeason) {
+  if (!activeSeason) return true;
+  if (!rowSeason) return false;
+  const [activeSem, activeYear] = String(activeSeason).trim().split(/\s+/);
+  const [rowSem,    rowYear]    = String(rowSeason).trim().split(/\s+/);
+  if (!activeSem || !rowSem) return false;
+  if (activeSem.toLowerCase() !== rowSem.toLowerCase()) return false;
+  if (activeYear && rowYear && activeYear !== rowYear) return false;
+  return true;
+}
 
 export function normalizeAvailabilityStatus(status) {
   const value = String(status || "").trim().toLowerCase();
@@ -64,12 +81,36 @@ export async function findApprovedAvailabilityConflicts(
   );
 }
 
-// Look up the currently-active season for a department so season-scoped
-// unavailability rows know whether they apply right now. Returns null
-// when the dept has no active-season configured; callers treat that as
-// "apply all season rows" (same lenient rule the frontend uses).
+// YYYY-MM-DD for today in the server's local timezone.
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Look up the currently-active semester name for a department using the
+// Semester table (date-range-based). Falls back to the legacy
+// Active Season settings value, then returns null if neither is
+// configured — callers treat null as "apply all season rows" (lenient).
 async function getActiveSeasonForDept(id_department) {
   if (!id_department) return null;
+  // Preferred path: Semester table with date bounds containing today.
+  try {
+    const today = todayKey();
+    const sem = await Semester.findOne({
+      where: {
+        id_department,
+        startDate: { [Op.lte]: today },
+        endDate:   { [Op.gte]: today },
+      },
+      order: [["startDate", "DESC"]],
+    });
+    if (sem?.name) return sem.name;
+  } catch (_) { /* fall through */ }
+  // Legacy fallback — covers depts that haven't configured Semester rows
+  // yet but still have an "Active Season" setting from earlier use.
   try {
     const sv = await SettingValue.findOne({
       where: { id_department },
@@ -104,9 +145,7 @@ export async function findUnavailabilityConflicts(id_employee, shiftDate, shiftS
   return rows.filter((row) => {
     if (!row.startTime || !row.endTime) return false;
     if (row.scopeType === "season") {
-      // Lenient: if the dept hasn't picked an active season yet, accept
-      // the row rather than silently ignoring freshly-imported classes.
-      if (activeSeason && row.season !== activeSeason) return false;
+      if (!seasonsMatch(activeSeason, row.season)) return false;
     } else if (row.scopeType === "dateRange") {
       if (!row.startDate || !row.endDate) return false;
       if (shiftDate < row.startDate || shiftDate > row.endDate) return false;

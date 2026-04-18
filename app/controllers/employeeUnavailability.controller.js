@@ -40,8 +40,28 @@ async function resolveSemester(reqSemester, id_department) {
         const readable = codeToReadableSeason(code);
         if (readable) return { code, readable };
     }
-    // Fallback: active-season from dept settings. `name`/`key` live on
-    // the Setting table, joined in.
+    // Preferred fallback: the dept's active semester as defined by its
+    // Semester rows (date-range-based). If today falls inside a
+    // configured semester, use that name.
+    if (id_department) {
+        const today = new Date();
+        const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+        const sem = await db.semester.findOne({
+            where: {
+                id_department,
+                startDate: { [Op.lte]: todayKey },
+                endDate:   { [Op.gte]: todayKey },
+            },
+            order: [["startDate", "DESC"]],
+        }).catch(() => null);
+        if (sem?.name) {
+            const code = readableSeasonToCode(sem.name);
+            if (code) return { code, readable: sem.name };
+        }
+    }
+    // Legacy fallback: active-season from dept settings (used for hours-
+    // of-operation variants). Kept so existing deployments without
+    // Semester rows configured don't lose import capability.
     if (id_department) {
         const sv = await db.settingValue.findOne({
             where: { id_department },
