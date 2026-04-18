@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import AuthRoutes from "./auth.routes.js";
 import EmployeeRoutes from "./employee.routes.js";
+import EmployeeUnavailabilityRoutes from "./employeeUnavailability.routes.js";
 import SessionRoutes from "./session.routes.js";
 import PositionRoutes from "./position.routes.js";
 import DepartmentRoutes from "./department.routes.js";
@@ -33,6 +34,7 @@ const router = Router();
 
 router.use("/", AuthRoutes);
 router.use("/employees", EmployeeRoutes);
+router.use("/employee-unavailability", EmployeeUnavailabilityRoutes);
 router.use("/sessions", SessionRoutes);
 router.use("/position", PositionRoutes);
 router.use("/departments", DepartmentRoutes);
