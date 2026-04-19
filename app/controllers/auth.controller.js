@@ -96,7 +96,19 @@ exports.login = async (req, res) => {
       if (data !== null) {
         session = data.dataValues;
 
-        if (session.expirationDate < Date.now()) {
+        // A session row can outlive the employee it was created for — e.g.
+        // when an employee was deleted and then re-added under the same
+        // email. Reusing such a session hands back a token whose id_user
+        // points to a deleted employee, producing a 401 on every
+        // authenticated request. Invalidate any mismatched session so we
+        // cleanly fall through to create a fresh one below.
+        if (session.id_user !== employee.id_employee) {
+          await Session.update(
+            { token: "", id_user: employee.id_employee },
+            { where: { id_session: session.id_session } }
+          );
+          session = {};
+        } else if (session.expirationDate < Date.now()) {
           // Expired — clear the token and fall through to create a new session
           await Session.update(
             { token: "" },

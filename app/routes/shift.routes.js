@@ -1,6 +1,7 @@
 import { Router } from "express";
 import shift from "../controllers/shift.controller.js";
 import authenticate from "../authorization/authorization.js";
+import requireAnyDepartment from "../authorization/requireAnyDepartment.js";
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
 router.post("/", [authenticate], shift.create);
 
 // Retrieve all Shifts
-router.get("/", [authenticate], shift.findAll);
+router.get("/", [authenticate, requireAnyDepartment], shift.findAll);
 
 // Retrieve a single Shift
 router.get("/:id_shift", [authenticate], shift.findOne);

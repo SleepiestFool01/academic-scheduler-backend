@@ -89,6 +89,18 @@ exports.createEmployee = async (req, res) => {
           if (!dup) {
             await Junction.create({ id_employee: existing.id_employee, id_department });
           }
+          // If the existing row has no primary dept yet (common when the
+          // employee Google-signed-in before any manager added them),
+          // adopt the one we're attaching them to so id_department and the
+          // junction table stay in sync. Never clobber a non-null primary
+          // — that belongs to whichever dept hired them first.
+          if (existing.id_department == null) {
+            await Employee.update(
+              { id_department },
+              { where: { id_employee: existing.id_employee } }
+            );
+            existing.id_department = id_department;
+          }
         }
         return res.send(existing);
       }
@@ -103,9 +115,56 @@ exports.createEmployee = async (req, res) => {
       bio:           req.body.bio ?? undefined,
       id_department: id_department ?? undefined,
     });
+
+    // Mirror the primary department in the junction table so membership is
+    // canonical regardless of which field callers read from. Managers go to
+    // managerDepartment; everyone else to employeeDepartment.
+    if (id_department) {
+      const isManagerRole = role === "Manager" || role === "Admin";
+      const Junction = isManagerRole ? db.managerDepartment : db.employeeDepartment;
+      try {
+        await Junction.create({ id_employee: data.id_employee, id_department });
+      } catch (_) { /* ignore duplicate-key and other non-critical errors */ }
+    }
+
     return res.send(data);
   } catch (err) {
     return res.status(500).send({ message: err.message || "Error creating employee." });
+  }
+};
+
+// Remove an employee from a specific department. Deletes the junction row
+// (managerDepartment or employeeDepartment depending on role) and, if the
+// dept was the employee's primary id_department, reassigns the primary to
+// another junction dept (or null). The employee record itself is preserved.
+exports.removeFromDepartment = async (req, res) => {
+  try {
+    const id_employee   = Number(req.params.id_employee);
+    const id_department = Number(req.params.id_department);
+    if (!id_employee || !id_department) {
+      return res.status(400).send({ message: "id_employee and id_department are required." });
+    }
+
+    const employee = await Employee.findByPk(id_employee);
+    if (!employee) return res.status(404).send({ message: "Employee not found." });
+
+    const isManagerRole = employee.role === "Manager" || employee.role === "Admin";
+    const Junction      = isManagerRole ? db.managerDepartment : db.employeeDepartment;
+
+    // Delete the junction row for this (employee, dept) if it exists.
+    await Junction.destroy({ where: { id_employee, id_department } });
+
+    // If the removed dept was the employee's primary, pick a replacement
+    // from any remaining junction rows so id_department stays in sync.
+    if (Number(employee.id_department) === id_department) {
+      const remaining = await Junction.findAll({ where: { id_employee } });
+      const nextPrimary = remaining.length ? remaining[0].id_department : null;
+      await Employee.update({ id_department: nextPrimary }, { where: { id_employee } });
+    }
+
+    return res.send({ message: "Employee removed from department." });
+  } catch (err) {
+    return res.status(500).send({ message: err.message || "Error removing employee from department." });
   }
 };
 
@@ -157,14 +216,19 @@ exports.updateRole = (req, res) => {
 };
 
 // Delete an Employee
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
   const id_employee = req.params.id_employee;
-  Employee.destroy({ where: { id_employee } })
-    .then((num) => {
-      if (num == 1) return res.send({ message: "Employee was deleted successfully!" });
-      return res.send({ message: `Cannot delete Employee with id_employee=${id_employee}.` });
-    })
-    .catch((err) => res.status(500).send({ message: "Could not delete Employee with id_employee=" + id_employee }));
+  try {
+    // Clean up sessions tied to this employee so stale tokens can't survive
+    // and cause 401s after a replacement employee is created with the same
+    // email.
+    await db.session.destroy({ where: { id_user: id_employee } });
+    const num = await Employee.destroy({ where: { id_employee } });
+    if (num == 1) return res.send({ message: "Employee was deleted successfully!" });
+    return res.send({ message: `Cannot delete Employee with id_employee=${id_employee}.` });
+  } catch (err) {
+    return res.status(500).send({ message: "Could not delete Employee with id_employee=" + id_employee });
+  }
 };
 
 export default exports;

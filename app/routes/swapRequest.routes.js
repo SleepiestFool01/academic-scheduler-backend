@@ -1,6 +1,7 @@
 import { Router } from "express";
 import swapRequest from "../controllers/swapRequest.controller.js";
 import authenticate from "../authorization/authorization.js";
+import requireAnyDepartment from "../authorization/requireAnyDepartment.js";
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
 router.post("/", [authenticate], swapRequest.create);
 
 // Retrieve all SwapRequests
-router.get("/", [authenticate], swapRequest.findAll);
+router.get("/", [authenticate, requireAnyDepartment], swapRequest.findAll);
 
 // Retrieve a single SwapRequest
 router.get("/:id_swapRequest", [authenticate], swapRequest.findOne);

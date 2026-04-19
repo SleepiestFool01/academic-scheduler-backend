@@ -1,6 +1,7 @@
 import { Router } from "express";
 import shiftAssignment from "../controllers/shiftAssignment.controller.js";
 import authenticate from "../authorization/authorization.js";
+import requireAnyDepartment from "../authorization/requireAnyDepartment.js";
 
 const router = Router();
 
@@ -8,7 +9,7 @@ const router = Router();
 router.post("/", [authenticate], shiftAssignment.create);
 
 // Retrieve all ShiftAssignments
-router.get("/", [authenticate], shiftAssignment.findAll);
+router.get("/", [authenticate, requireAnyDepartment], shiftAssignment.findAll);
 
 // Retrieve a single ShiftAssignment
 router.get("/:id_shiftAssignment", [authenticate], shiftAssignment.findOne);
