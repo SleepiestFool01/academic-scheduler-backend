@@ -81,6 +81,46 @@ async function resolveSemester(reqSemester, id_department) {
     return { code, readable: codeToReadableSeason(code) };
 }
 
+// Returns true if the caller may read another employee's unavailability.
+// Self always allowed; Admins always allowed; Managers only for employees
+// whose primary or junction department they manage.
+async function callerCanReadEmployee(caller, id_employee) {
+    if (!caller || !id_employee) return false;
+    if (caller.role === "Admin") return true;
+    if (Number(caller.id_employee) === Number(id_employee)) return true;
+    if (caller.role === "Manager") {
+        const mgrDeptIds = new Set(
+            (await db.managerDepartment.findAll({ where: { id_employee: caller.id_employee } }))
+                .map(r => Number(r.id_department))
+        );
+        if (mgrDeptIds.size === 0) return false;
+        const target = await Employee.findByPk(id_employee, { attributes: ["id_employee", "id_department"] });
+        if (!target) return false;
+        if (target.id_department && mgrDeptIds.has(Number(target.id_department))) return true;
+        const empDeptIds = new Set(
+            (await db.employeeDepartment.findAll({ where: { id_employee } }))
+                .map(r => Number(r.id_department))
+        );
+        for (const d of empDeptIds) if (mgrDeptIds.has(d)) return true;
+    }
+    return false;
+}
+
+// Returns true if the caller may read unavailability rows scoped to a
+// department. Admins anywhere; Managers only for departments they're
+// assigned to.
+async function callerCanReadDepartment(caller, id_department) {
+    if (!caller || !id_department) return false;
+    if (caller.role === "Admin") return true;
+    if (caller.role === "Manager") {
+        const mgr = await db.managerDepartment.findOne({
+            where: { id_employee: caller.id_employee, id_department },
+        });
+        return !!mgr;
+    }
+    return false;
+}
+
 // Returns true if the caller is allowed to trigger an import for
 // `targetEmployee`. Employees can self-sync; Admins can sync anyone;
 // Managers can sync employees in departments they manage.
@@ -167,7 +207,31 @@ function validateScope({ scopeType, season, startDate, endDate }) {
 // typically pass id_department; the Availability page passes id_employee.
 exports.findAll = async (req, res) => {
     try {
+        const caller = req.user;
+        if (!caller) return res.status(401).send({ message: "Unauthorized." });
+
         const { id_employee, id_department } = req.query;
+
+        // Authorization: a non-Admin must either be reading their own rows
+        // or rows belonging to a department/employee they manage. Without a
+        // filter we'd otherwise return every employee's schedule in the DB,
+        // so default an unscoped non-Admin query to the caller's own rows.
+        if (id_department) {
+            const ok = await callerCanReadDepartment(caller, Number(id_department));
+            if (!ok) return res.status(403).send({ message: "Not allowed to view this department's unavailability." });
+        }
+        if (id_employee) {
+            const ok = await callerCanReadEmployee(caller, Number(id_employee));
+            if (!ok) return res.status(403).send({ message: "Not allowed to view this employee's unavailability." });
+        }
+        if (!id_employee && !id_department && caller.role !== "Admin") {
+            const rows = await EmployeeUnavailability.findAll({
+                where: { id_employee: caller.id_employee },
+                order: [["dayOfWeek", "ASC"], ["startTime", "ASC"]],
+            });
+            return res.send(stripHiddenLabels(rows, caller.id_employee, caller.role));
+        }
+
         const where = {};
         if (id_employee) where.id_employee = id_employee;
 

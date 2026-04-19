@@ -4,6 +4,22 @@ const Semester = db.semester;
 const Op = db.Sequelize.Op;
 const exports = {};
 
+// Admins may manage any department's semesters; Managers only those of
+// departments they're assigned to. Mutating a semester (especially the
+// active one) silently disables season-scoped unavailability conflict
+// detection, so the check has to happen on every write path.
+async function callerCanManageDepartment(caller, id_department) {
+    if (!caller || !id_department) return false;
+    if (caller.role === "Admin") return true;
+    if (caller.role === "Manager") {
+        const mgr = await db.managerDepartment.findOne({
+            where: { id_employee: caller.id_employee, id_department },
+        });
+        return !!mgr;
+    }
+    return false;
+}
+
 // ISO YYYY-MM-DD for today in the server's local timezone. All Semester
 // rows store DATEONLY, so comparing like-for-like avoids timezone skew.
 function todayKey() {
@@ -53,6 +69,9 @@ exports.findActive = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
+        const caller = req.user;
+        if (!caller) return res.status(401).send({ message: "Unauthorized." });
+
         const { id_department, name, startDate, endDate } = req.body || {};
         if (!id_department || !name || !startDate || !endDate) {
             return res.status(400).send({ message: "id_department, name, startDate, endDate are required." });
@@ -60,6 +79,9 @@ exports.create = async (req, res) => {
         if (startDate > endDate) {
             return res.status(400).send({ message: "endDate must be on or after startDate." });
         }
+        const allowed = await callerCanManageDepartment(caller, Number(id_department));
+        if (!allowed) return res.status(403).send({ message: "Not allowed to manage this department's semesters." });
+
         const row = await Semester.create({ id_department, name, startDate, endDate });
         return res.status(201).send(row);
     } catch (err) {
@@ -69,8 +91,15 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
+        const caller = req.user;
+        if (!caller) return res.status(401).send({ message: "Unauthorized." });
+
         const row = await Semester.findByPk(req.params.id_semester);
         if (!row) return res.status(404).send({ message: "Semester not found." });
+
+        const allowed = await callerCanManageDepartment(caller, Number(row.id_department));
+        if (!allowed) return res.status(403).send({ message: "Not allowed to manage this department's semesters." });
+
         const { name, startDate, endDate } = req.body || {};
         const patch = {};
         if (name       !== undefined) patch.name      = name;
@@ -90,9 +119,17 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try {
-        const num = await Semester.destroy({ where: { id_semester: req.params.id_semester } });
-        if (num === 1) return res.status(204).send();
-        return res.status(404).send({ message: "Semester not found." });
+        const caller = req.user;
+        if (!caller) return res.status(401).send({ message: "Unauthorized." });
+
+        const row = await Semester.findByPk(req.params.id_semester);
+        if (!row) return res.status(404).send({ message: "Semester not found." });
+
+        const allowed = await callerCanManageDepartment(caller, Number(row.id_department));
+        if (!allowed) return res.status(403).send({ message: "Not allowed to manage this department's semesters." });
+
+        await row.destroy();
+        return res.status(204).send();
     } catch (err) {
         return res.status(500).send({ message: err.message || "Error deleting semester." });
     }
