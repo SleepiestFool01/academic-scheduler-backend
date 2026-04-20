@@ -5,6 +5,7 @@ import {
   normalizeAvailabilityStatus,
   releaseAssignmentsForAvailability,
 } from "../utils/availability.js";
+import { shouldNotify } from "../utils/preferences.js";
 
 const PersonalAvailability = db.personalAvailability;
 const Employee = db.employee;
@@ -48,6 +49,8 @@ exports.create = (req, res) => {
           if (mgrIds.length) {
             const managers = await Employee.findAll({ where: { id_employee: mgrIds } });
             for (const mgr of managers) {
+              const notify = await shouldNotify(mgr.id_employee, emp.id_department, "newTimeOffRequest");
+              if (!notify) continue;
               sendEmail(
                 mgr.email,
                 "New time-off request",

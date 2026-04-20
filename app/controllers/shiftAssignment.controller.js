@@ -2,6 +2,7 @@ import db from "../models/index.js";
 import { sendEmail } from "../utils/mailer.js";
 import { shiftAssignedEmail } from "../utils/emailTemplates.js";
 import { assertEmployeeAvailableForShift } from "../utils/availability.js";
+import { shouldNotify } from "../utils/preferences.js";
 
 const ShiftAssignment = db.shiftAssignment;
 const Employee = db.employee;
@@ -45,17 +46,20 @@ exports.create = (req, res) => {
         ]);
         if (emp && shift) {
           const pos = shift.id_position ? await Position.findByPk(shift.id_position) : null;
-          sendEmail(
-            emp.email,
-            "You've been assigned a shift",
-            shiftAssignedEmail(
-              `${emp.fName} ${emp.lName}`,
-              date,
-              shift.startTime,
-              shift.endTime,
-              pos ? pos.name : null
-            )
-          ).catch(console.error);
+          const notify = await shouldNotify(emp.id_employee, shift.id_department, "shiftAssigned");
+          if (notify) {
+            sendEmail(
+              emp.email,
+              "You've been assigned a shift",
+              shiftAssignedEmail(
+                `${emp.fName} ${emp.lName}`,
+                date,
+                shift.startTime,
+                shift.endTime,
+                pos ? pos.name : null
+              )
+            ).catch(console.error);
+          }
         }
       } catch (emailErr) {
         console.error("[shiftAssignment] Email notification error:", emailErr.message);
