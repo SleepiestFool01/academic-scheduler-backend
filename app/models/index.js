@@ -34,6 +34,7 @@ import TemplateShiftTaskList from "./templateShiftTaskList.model.js";
 import TemplateApplication from "./templateApplication.model.js";
 import TemplateApplicationShift from "./templateApplicationShift.model.js";
 import UserDepartmentPreferences from "./userDepartmentPreferences.model.js";
+import TimeEntry from "./timeEntry.model.js";
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -71,6 +72,7 @@ db.templateShiftTaskList     = TemplateShiftTaskList;
 db.templateApplication       = TemplateApplication;
 db.templateApplicationShift  = TemplateApplicationShift;
 db.userDepartmentPreferences = UserDepartmentPreferences;
+db.timeEntry = TimeEntry;
 
 // Template → TemplateShift (cascade delete shifts when template is deleted)
 TemplateShift.belongsTo(Template, {
@@ -260,6 +262,46 @@ ShiftAssignment.belongsTo(Employee, {
 Employee.hasMany(ShiftAssignment, {
   foreignKey: { name: "id_employee", allowNull: false },
   as: "shiftAssignments",
+});
+
+Shift.belongsTo(Position, {
+  foreignKey: { name: "id_position", allowNull: true },
+  as: "position",
+  onDelete: "SET NULL",
+});
+Position.hasMany(Shift, {
+  foreignKey: { name: "id_position", allowNull: true },
+  as: "shifts",
+});
+
+Shift.belongsTo(Department, {
+  foreignKey: { name: "id_department", allowNull: true },
+  as: "shiftDepartment",
+  onDelete: "SET NULL",
+});
+Department.hasMany(Shift, {
+  foreignKey: { name: "id_department", allowNull: true },
+  as: "shifts",
+});
+
+TimeEntry.belongsTo(Employee, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "employee",
+  onDelete: "CASCADE",
+});
+Employee.hasMany(TimeEntry, {
+  foreignKey: { name: "id_employee", allowNull: false },
+  as: "timeEntries",
+});
+
+TimeEntry.belongsTo(ShiftAssignment, {
+  foreignKey: { name: "id_shiftAssignment", allowNull: false },
+  as: "shiftAssignment",
+  onDelete: "CASCADE",
+});
+ShiftAssignment.hasMany(TimeEntry, {
+  foreignKey: { name: "id_shiftAssignment", allowNull: false },
+  as: "timeEntries",
 });
 
 // Task ↔ TaskList
