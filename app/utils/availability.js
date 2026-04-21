@@ -90,24 +90,28 @@ function todayKey() {
   return `${y}-${m}-${day}`;
 }
 
-// Look up the currently-active semester name for a department using the
-// Semester table (date-range-based). Falls back to the legacy
-// Active Season settings value, then returns null if neither is
-// configured — callers treat null as "apply all season rows" (lenient).
-async function getActiveSeasonForDept(id_department) {
-  if (!id_department) return null;
-  // Preferred path: Semester table with date bounds containing today.
+// Look up the semester name that contains `forDate` (YYYY-MM-DD) for the
+// given department. Falls back to today's semester, then the legacy Active
+// Season setting. Returns null if nothing is configured — callers treat
+// null as "apply all season rows" (lenient).
+//
+// Why date-scoped: a shift in Fall 2026 should be matched against Fall
+// unavailability rows, NOT Spring rows, even if today is in Spring. Using
+// today's semester would wrongly block Fall assignments with Spring-only
+// class schedule imports.
+async function getSeasonForDate(id_department, forDate) {
+  if (!id_department) return { id_semester: null, name: null };
+  const dateKey = forDate || todayKey();
   try {
-    const today = todayKey();
     const sem = await Semester.findOne({
       where: {
         id_department,
-        startDate: { [Op.lte]: today },
-        endDate:   { [Op.gte]: today },
+        startDate: { [Op.lte]: dateKey },
+        endDate:   { [Op.gte]: dateKey },
       },
       order: [["startDate", "DESC"]],
     });
-    if (sem?.name) return sem.name;
+    if (sem?.name) return { id_semester: sem.id_semester, name: sem.name };
   } catch (_) { /* fall through */ }
   // Legacy fallback — covers depts that haven't configured Semester rows
   // yet but still have an "Active Season" setting from earlier use.
@@ -120,9 +124,9 @@ async function getActiveSeasonForDept(id_department) {
         where: { [Op.or]: [{ name: "Active Season" }, { key: "active_season" }] },
       }],
     });
-    return sv?.value || null;
+    return { id_semester: null, name: sv?.value || null };
   } catch (_) {
-    return null;
+    return { id_semester: null, name: null };
   }
 }
 
@@ -138,14 +142,35 @@ export async function findUnavailabilityConflicts(id_employee, shiftDate, shiftS
     where: { id_employee, dayOfWeek: dayName },
   });
 
-  const activeSeason = options.activeSeason !== undefined
-    ? options.activeSeason
-    : await getActiveSeasonForDept(options.id_department);
+  // Resolve the shift-date's semester (not today's) so Fall shifts are
+  // matched against Fall unavailability, not whatever semester is active
+  // right now. We carry both id and name so rows created with an
+  // id_semester FK match by ID (robust to name drift), and legacy rows
+  // without an FK still match by string.
+  let resolvedSeason;
+  if (options.activeSeason !== undefined) {
+    // Legacy callers may pass just a string — normalize to the object shape.
+    resolvedSeason = typeof options.activeSeason === "string" || options.activeSeason === null
+      ? { id_semester: null, name: options.activeSeason }
+      : options.activeSeason;
+  } else {
+    resolvedSeason = await getSeasonForDate(options.id_department, shiftDate);
+  }
+  const { id_semester: shiftSemId, name: shiftSemName } = resolvedSeason;
 
   return rows.filter((row) => {
     if (!row.startTime || !row.endTime) return false;
     if (row.scopeType === "season") {
-      if (!seasonsMatch(activeSeason, row.season)) return false;
+      // Prefer FK match when the row has an id_semester — it's the
+      // authoritative link. A row with an id_semester set to a different
+      // semester than the shift's must not match even if the string name
+      // happens to overlap.
+      if (row.id_semester != null) {
+        if (shiftSemId == null || Number(row.id_semester) !== Number(shiftSemId)) return false;
+      } else {
+        // Legacy row without FK — fall back to the string compare.
+        if (!seasonsMatch(shiftSemName, row.season)) return false;
+      }
     } else if (row.scopeType === "dateRange") {
       if (!row.startDate || !row.endDate) return false;
       if (shiftDate < row.startDate || shiftDate > row.endDate) return false;

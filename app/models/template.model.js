@@ -21,6 +21,16 @@ const Template = SequelizeInstance.define("template", {
     allowNull: true,
     defaultValue: null,
   },
+  durationWeeks: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 1,
+  },
+  id_semester: {
+    type: Sequelize.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  },
 });
 
 export default Template;

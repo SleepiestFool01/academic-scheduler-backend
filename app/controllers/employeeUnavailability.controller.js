@@ -34,11 +34,23 @@ function markImported(id_employee) {
 // case we fall back to the dept's active-season setting, then to today's
 // calendar-based guess.
 async function resolveSemester(reqSemester, id_department) {
-    // Caller-supplied value wins — try both formats.
+    // Caller-supplied value wins — try both formats. If we're given a
+    // department, also look up the matching Semester row so the result
+    // carries an id_semester FK for import rows to stamp.
+    async function findSemesterRow(readable) {
+        if (!readable || !id_department) return null;
+        return await db.semester.findOne({
+            where: { id_department, name: readable },
+        }).catch(() => null);
+    }
+
     if (reqSemester) {
         const code = readableSeasonToCode(reqSemester) || reqSemester;
         const readable = codeToReadableSeason(code);
-        if (readable) return { code, readable };
+        if (readable) {
+            const sem = await findSemesterRow(readable);
+            return { code, readable, id_semester: sem?.id_semester || null };
+        }
     }
     // Preferred fallback: the dept's active semester as defined by its
     // Semester rows (date-range-based). If today falls inside a
@@ -56,7 +68,7 @@ async function resolveSemester(reqSemester, id_department) {
         }).catch(() => null);
         if (sem?.name) {
             const code = readableSeasonToCode(sem.name);
-            if (code) return { code, readable: sem.name };
+            if (code) return { code, readable: sem.name, id_semester: sem.id_semester };
         }
     }
     // Legacy fallback: active-season from dept settings (used for hours-
@@ -73,12 +85,17 @@ async function resolveSemester(reqSemester, id_department) {
         }).catch(() => null);
         if (sv && sv.value) {
             const code = readableSeasonToCode(sv.value);
-            if (code) return { code, readable: sv.value };
+            if (code) {
+                const sem = await findSemesterRow(sv.value);
+                return { code, readable: sv.value, id_semester: sem?.id_semester || null };
+            }
         }
     }
     // Last resort: today's date.
     const code = todayToStingrayCode();
-    return { code, readable: codeToReadableSeason(code) };
+    const readable = codeToReadableSeason(code);
+    const sem = await findSemesterRow(readable);
+    return { code, readable, id_semester: sem?.id_semester || null };
 }
 
 // Returns true if the caller may read another employee's unavailability.
@@ -147,31 +164,37 @@ async function callerCanImportFor(caller, targetEmployee) {
 // for this (employee, season) pair, and insert the parsed rows fresh. Not
 // an Express handler; both the single- and bulk-endpoint controllers call
 // this. Returns { inserted, semester } or throws.
-async function runImportForEmployee(employee, semesterCode, semesterReadable) {
+async function runImportForEmployee(employee, semesterCode, semesterReadable, id_semester = null) {
     if (!employee?.email) {
         const err = new Error("Employee has no email on file — cannot sync.");
         err.code = "BAD_INPUT";
         throw err;
     }
     const data = await fetchStingrayCourses(employee.email, semesterCode);
-    const rows = coursesToUnavailabilityRows(data.Courses, {
+    const baseRows = coursesToUnavailabilityRows(data.Courses, {
         id_employee:    employee.id_employee,
         seasonReadable: semesterReadable,
     });
+    // Stamp id_semester on every row so conflict detection can match by
+    // FK rather than string season.
+    const rows = baseRows.map(r => ({ ...r, id_semester: id_semester || null }));
 
     // Upsert semantics: drop every imported row for this (employee, season)
-    // first, then insert the new set. Manual rows and rows from other
-    // seasons are untouched.
+    // first, then insert the new set. Prefer id_semester-based deletion
+    // when we have it so re-imports target the right rows even if the
+    // readable name drifted.
     await EmployeeUnavailability.destroy({
         where: {
             id_employee: employee.id_employee,
             source:      "imported",
-            season:      semesterReadable,
+            ...(id_semester
+                ? { id_semester }
+                : { season: semesterReadable }),
         },
     });
     if (rows.length) await EmployeeUnavailability.bulkCreate(rows);
     markImported(employee.id_employee);
-    return { inserted: rows.length, semester: semesterReadable };
+    return { inserted: rows.length, semester: semesterReadable, id_semester };
 }
 
 // Allowed values mirror the model ENUMs — validated here so bad callers
@@ -234,6 +257,7 @@ exports.findAll = async (req, res) => {
 
         const where = {};
         if (id_employee) where.id_employee = id_employee;
+        if (req.query.id_semester) where.id_semester = req.query.id_semester;
 
         if (id_department) {
             // Employees in the dept, via primary or junction — mirrors the
@@ -307,6 +331,7 @@ exports.create = async (req, res) => {
             endTime:      body.endTime,
             scopeType,
             season:       scopeType === "season"    ? (body.season || null) : null,
+            id_semester:  scopeType === "season"    ? (body.id_semester || null) : null,
             startDate:    scopeType === "dateRange" ? (body.startDate || null) : null,
             endDate:      scopeType === "dateRange" ? (body.endDate   || null) : null,
             source,
@@ -353,9 +378,10 @@ exports.update = async (req, res) => {
         if (body.startTime    !== undefined) patch.startTime    = body.startTime;
         if (body.endTime      !== undefined) patch.endTime      = body.endTime;
         if (body.scopeType    !== undefined) patch.scopeType    = body.scopeType;
-        patch.season    = scopeType === "season"    ? (body.season    !== undefined ? body.season    : row.season)    : null;
-        patch.startDate = scopeType === "dateRange" ? (body.startDate !== undefined ? body.startDate : row.startDate) : null;
-        patch.endDate   = scopeType === "dateRange" ? (body.endDate   !== undefined ? body.endDate   : row.endDate)   : null;
+        patch.season      = scopeType === "season"    ? (body.season      !== undefined ? body.season      : row.season)      : null;
+        patch.id_semester = scopeType === "season"    ? (body.id_semester !== undefined ? body.id_semester : row.id_semester) : null;
+        patch.startDate   = scopeType === "dateRange" ? (body.startDate   !== undefined ? body.startDate   : row.startDate)   : null;
+        patch.endDate     = scopeType === "dateRange" ? (body.endDate     !== undefined ? body.endDate     : row.endDate)     : null;
         if (body.label        !== undefined) patch.label        = body.label;
         if (body.hideReason   !== undefined) patch.hideReason   = !!body.hideReason;
 
@@ -407,10 +433,10 @@ exports.importForEmployee = async (req, res) => {
             return res.status(429).send({ message: "Please wait a few seconds before syncing again." });
         }
 
-        const { code, readable } = await resolveSemester(req.body?.semester, employee.id_department);
+        const { code, readable, id_semester } = await resolveSemester(req.body?.semester, employee.id_department);
 
         try {
-            const result = await runImportForEmployee(employee, code, readable);
+            const result = await runImportForEmployee(employee, code, readable, id_semester);
             console.log(`[stingray] imported ${result.inserted} rows for employee ${employee.id_employee} (${employee.email}) semester ${readable}`);
             return res.send(result);
         } catch (err) {
@@ -447,7 +473,7 @@ exports.importForDepartment = async (req, res) => {
         }
         if (!allowed) return res.status(403).send({ message: "Only Admins or Managers of this department may bulk-sync." });
 
-        const { code, readable } = await resolveSemester(req.body?.semester, id_department);
+        const { code, readable, id_semester } = await resolveSemester(req.body?.semester, id_department);
 
         // Collect employees in this dept (primary + junction), dedup by id.
         const junctionRows = await db.employeeDepartment.findAll({ where: { id_department } });
@@ -470,7 +496,7 @@ exports.importForDepartment = async (req, res) => {
                 continue;
             }
             try {
-                const result = await runImportForEmployee(emp, code, readable);
+                const result = await runImportForEmployee(emp, code, readable, id_semester);
                 succeeded.push({ id_employee: emp.id_employee, name: `${emp.fName} ${emp.lName}`, inserted: result.inserted });
             } catch (err) {
                 failed.push({

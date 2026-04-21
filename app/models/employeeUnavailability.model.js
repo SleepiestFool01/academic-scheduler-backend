@@ -47,6 +47,16 @@ const EmployeeUnavailability = SequelizeInstance.define("employeeUnavailability"
         defaultValue: null,
     },
 
+    // FK to Semester — preferred way to scope season rows so conflict
+    // detection matches by ID (not a fragile string compare). `season`
+    // above is kept in sync for display + backward compatibility with
+    // rows created before this column existed.
+    id_semester: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        defaultValue: null,
+    },
+
     startDate: {
         type: Sequelize.DATEONLY,
         allowNull: true,

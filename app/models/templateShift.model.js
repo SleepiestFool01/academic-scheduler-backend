@@ -15,6 +15,11 @@ const TemplateShift = SequelizeInstance.define("templateShift", {
     type: Sequelize.INTEGER,  // 0 = Sunday … 6 = Saturday
     allowNull: false,
   },
+  weekOffset: {
+    type: Sequelize.INTEGER,  // 0-indexed week within a multi-week template (0 = week 1)
+    allowNull: false,
+    defaultValue: 0,
+  },
   startHour: {
     type: Sequelize.FLOAT,    // fractional hours, e.g. 9.5 = 9:30 AM
     allowNull: false,

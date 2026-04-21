@@ -4,7 +4,7 @@ const TemplateShift = db.templateShift;
 const exports = {};
 
 exports.create = (req, res) => {
-  const { id_template, dayOfWeek, startHour, endHour, label, notes, id_position } = req.body;
+  const { id_template, dayOfWeek, startHour, endHour, label, notes, id_position, weekOffset } = req.body;
 
   if (!id_template || dayOfWeek === undefined || startHour === undefined || endHour === undefined) {
     return res.status(400).send({ message: "Missing required fields: id_template, dayOfWeek, startHour, endHour." });
@@ -13,7 +13,18 @@ exports.create = (req, res) => {
     return res.status(400).send({ message: "endHour must be greater than startHour." });
   }
 
-  TemplateShift.create({ id_template, dayOfWeek, startHour, endHour, label, notes, id_position: id_position || null })
+  const wo = Number.isFinite(+weekOffset) && +weekOffset >= 0 ? Math.floor(+weekOffset) : 0;
+
+  TemplateShift.create({
+    id_template,
+    dayOfWeek,
+    weekOffset: wo,
+    startHour,
+    endHour,
+    label,
+    notes,
+    id_position: id_position || null,
+  })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error creating TemplateShift." })
@@ -23,8 +34,9 @@ exports.create = (req, res) => {
 exports.findAll = (req, res) => {
   const where = {};
   if (req.query.id_template) where.id_template = req.query.id_template;
+  if (req.query.weekOffset !== undefined) where.weekOffset = +req.query.weekOffset;
 
-  TemplateShift.findAll({ where, order: [["dayOfWeek", "ASC"], ["startHour", "ASC"]] })
+  TemplateShift.findAll({ where, order: [["weekOffset", "ASC"], ["dayOfWeek", "ASC"], ["startHour", "ASC"]] })
     .then((data) => res.send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error retrieving TemplateShifts." })
