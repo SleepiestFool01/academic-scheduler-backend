@@ -5,6 +5,7 @@ import {
   deptAccessApprovedEmail,
   deptAccessDeniedEmail,
 } from "../utils/emailTemplates.js";
+import { shouldNotify } from "../utils/preferences.js";
 
 const DepartmentAccessRequest = db.departmentAccessRequest;
 const ManagerDepartment        = db.managerDepartment;
@@ -68,7 +69,15 @@ exports.create = async (req, res) => {
             const recipientIds = [...new Set([...mgrIds, ...adminIds])];
             if (recipientIds.length) {
                 const recipients = await Employee.findAll({ where: { id_employee: recipientIds } });
+                const mgrIdSet = new Set(mgrIds);
                 for (const r of recipients) {
+                    // Managers of the target dept check newAccessRequest scoped
+                    // to that dept. Admins (who might not manage the dept)
+                    // check crossDeptAccess on the target dept as the closest
+                    // meaningful scope.
+                    const key = mgrIdSet.has(r.id_employee) ? "newAccessRequest" : "crossDeptAccess";
+                    const notify = await shouldNotify(r.id_employee, id_department, key);
+                    if (!notify) continue;
                     sendEmail(
                         r.email,
                         "New department access request",

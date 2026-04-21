@@ -3,11 +3,16 @@ import { Op } from "sequelize";
 import db from "../models/index.js";
 import { sendEmail } from "../utils/mailer.js";
 import { shiftReminderEmail } from "../utils/emailTemplates.js";
+import { getPrefs } from "../utils/preferences.js";
 
 const ShiftAssignment = db.shiftAssignment;
 const Shift = db.shift;
 const Employee = db.employee;
 const Position = db.position;
+
+const CRON_INTERVAL_MIN = 15;
+const MAX_LOOKAHEAD_MIN = 120;     // support up to 2h lead-time pref
+const DEFAULT_LEAD_MIN  = 30;
 
 // Track sent reminders to avoid duplicates (key: "id_shiftAssignment-date")
 const sentReminders = new Set();
@@ -28,14 +33,16 @@ async function checkAndSendReminders() {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-    // Build a time string 30 minutes from now
-    const soon = new Date(now.getTime() + 30 * 60 * 1000);
+    // Pull the widest lookahead window we might need (2h). We filter per
+    // assignment against each user's own lead-time pref below.
+    const lookaheadEnd = new Date(now.getTime() + MAX_LOOKAHEAD_MIN * 60 * 1000);
     const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
-    const soonTime = `${pad(soon.getHours())}:${pad(soon.getMinutes())}:00`;
+    const lookaheadEndTime = `${pad(lookaheadEnd.getHours())}:${pad(lookaheadEnd.getMinutes())}:00`;
 
-    // If soonTime rolled past midnight, skip (edge case: shift at 00:00
-    // when current time is 23:45). We only look at same-day shifts.
-    if (soonTime < nowTime) return;
+    // If the lookahead end rolled past midnight, clamp to end-of-day to
+    // keep the same-day query valid; shifts after midnight are picked up
+    // on the next tick after the date rolls.
+    const effectiveEnd = lookaheadEndTime < nowTime ? "23:59:00" : lookaheadEndTime;
 
     const assignments = await ShiftAssignment.findAll({
       where: { date: todayStr },
@@ -44,7 +51,7 @@ async function checkAndSendReminders() {
           model: Shift,
           as: "shift",
           where: {
-            startTime: { [Op.gte]: nowTime, [Op.lte]: soonTime },
+            startTime: { [Op.gte]: nowTime, [Op.lte]: effectiveEnd },
           },
         },
         { model: Employee, as: "employee" },
@@ -64,6 +71,18 @@ async function checkAndSendReminders() {
       const shiftStart = new Date(now);
       shiftStart.setHours(h, m, 0, 0);
       const minutesUntil = Math.max(1, Math.round((shiftStart - now) / 60000));
+
+      // Per-user lead-time prefs. Default when the employee has no prefs
+      // row for this dept is "enabled at 30 min" — matches pre-prefs behavior.
+      const prefs = await getPrefs(emp.id_employee, shift.id_department, "shiftReminders");
+      if (prefs.enabled === false) continue;
+      const leadTarget = Number.isFinite(prefs.minutesBefore) ? prefs.minutesBefore : DEFAULT_LEAD_MIN;
+
+      // Fire during the cron tick that lands inside the user's lead window:
+      //   (leadTarget - CRON_INTERVAL_MIN)  <  minutesUntil  <=  leadTarget
+      // Ensures exactly one send even though the cron runs repeatedly.
+      if (minutesUntil > leadTarget) continue;
+      if (minutesUntil <= leadTarget - CRON_INTERVAL_MIN) continue;
 
       const pos = shift.id_position ? await Position.findByPk(shift.id_position) : null;
       const posName = pos ? pos.name : null;

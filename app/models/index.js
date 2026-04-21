@@ -31,6 +31,7 @@ import TemplateShiftEmployee from "./templateShiftEmployee.model.js";
 import TemplateShiftTaskList from "./templateShiftTaskList.model.js";
 import TemplateApplication from "./templateApplication.model.js";
 import TemplateApplicationShift from "./templateApplicationShift.model.js";
+import UserDepartmentPreferences from "./userDepartmentPreferences.model.js";
 
 const db = {};
 db.Sequelize = Sequelize;
@@ -65,6 +66,7 @@ db.templateShiftEmployee     = TemplateShiftEmployee;
 db.templateShiftTaskList     = TemplateShiftTaskList;
 db.templateApplication       = TemplateApplication;
 db.templateApplicationShift  = TemplateApplicationShift;
+db.userDepartmentPreferences = UserDepartmentPreferences;
 
 // Template → TemplateShift (cascade delete shifts when template is deleted)
 TemplateShift.belongsTo(Template, {
@@ -363,6 +365,27 @@ DepartmentAccessRequest.belongsTo(Department, {
     foreignKey: { name: "id_department", allowNull: false },
     as: "department",
     onDelete: "CASCADE",
+});
+
+// UserDepartmentPreferences: per-employee, per-department Settings-page prefs
+UserDepartmentPreferences.belongsTo(Employee, {
+    foreignKey: { name: "id_employee", allowNull: false },
+    as: "employee",
+    onDelete: "CASCADE",
+});
+Employee.hasMany(UserDepartmentPreferences, {
+    foreignKey: { name: "id_employee", allowNull: false },
+    as: "departmentPreferences",
+});
+
+UserDepartmentPreferences.belongsTo(Department, {
+    foreignKey: { name: "id_department", allowNull: false },
+    as: "department",
+    onDelete: "CASCADE",
+});
+Department.hasMany(UserDepartmentPreferences, {
+    foreignKey: { name: "id_department", allowNull: false },
+    as: "userPreferences",
 });
 
 export default db;

@@ -6,6 +6,7 @@ import {
   swapApprovedEmail,
   swapDeniedEmail,
 } from "../utils/emailTemplates.js";
+import { shouldNotify } from "../utils/preferences.js";
 
 const SwapRequest = db.swapRequest;
 const ShiftAssignment = db.shiftAssignment;
@@ -76,6 +77,8 @@ exports.create = (req, res) => {
           if (mgrIds.length) {
             const managers = await Employee.findAll({ where: { id_employee: mgrIds } });
             for (const mgr of managers) {
+              const notify = await shouldNotify(mgr.id_employee, shift.id_department, "newSwapRequest");
+              if (!notify) continue;
               sendEmail(
                 mgr.email,
                 "Shift posted to tradeboard",
@@ -220,17 +223,20 @@ exports.update = async (req, res) => {
           Employee.findByPk(req.body.id_employeeRequested),
         ]);
         if (poster && claimer) {
-          sendEmail(
-            poster.email,
-            "Your shift was claimed",
-            swapClaimedEmail(
-              `${poster.fName} ${poster.lName}`,
-              `${claimer.fName} ${claimer.lName}`,
-              shiftDate,
-              shiftTime,
-              posName
-            )
-          ).catch(console.error);
+          const notify = await shouldNotify(poster.id_employee, shift?.id_department, "swapDecision");
+          if (notify) {
+            sendEmail(
+              poster.email,
+              "Your shift was claimed",
+              swapClaimedEmail(
+                `${poster.fName} ${poster.lName}`,
+                `${claimer.fName} ${claimer.lName}`,
+                shiftDate,
+                shiftTime,
+                posName
+              )
+            ).catch(console.error);
+          }
         }
       }
 
@@ -240,14 +246,14 @@ exports.update = async (req, res) => {
           Employee.findByPk(swap.id_employeeRequester),
           Employee.findByPk(swap.id_employeeRequested),
         ]);
-        if (requester) {
+        if (requester && await shouldNotify(requester.id_employee, shift?.id_department, "swapDecision")) {
           sendEmail(
             requester.email,
             "Swap approved",
             swapApprovedEmail(`${requester.fName} ${requester.lName}`, shiftDate, shiftTime, posName)
           ).catch(console.error);
         }
-        if (requested) {
+        if (requested && await shouldNotify(requested.id_employee, shift?.id_department, "swapDecision")) {
           sendEmail(
             requested.email,
             "Swap approved",
@@ -259,7 +265,7 @@ exports.update = async (req, res) => {
       // Denied: notify the requester
       if (req.body.status === "Denied") {
         const requester = await Employee.findByPk(swap.id_employeeRequester);
-        if (requester) {
+        if (requester && await shouldNotify(requester.id_employee, shift?.id_department, "swapDecision")) {
           sendEmail(
             requester.email,
             "Swap denied",
