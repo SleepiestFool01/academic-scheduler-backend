@@ -18,6 +18,7 @@ import Setting from "./setting.model.js";
 import SettingValue from "./settingValue.model.js";
 import Shift from "./shift.model.js";
 import ShiftAssignment from "./shiftAssignment.model.js";
+import ShiftTask from "./shiftTask.model.js";
 import ShiftTaskList from "./shiftTaskList.model.js";
 import ShiftTaskListStatus from "./shiftTaskListStatus.model.js";
 import ManagerDepartment from "./managerDepartment.model.js";
@@ -28,6 +29,7 @@ import TaskList from "./tasklist.model.js";
 import Template from "./template.model.js";
 import TemplateShift from "./templateShift.model.js";
 import TemplateShiftEmployee from "./templateShiftEmployee.model.js";
+import TemplateShiftTask from "./templateShiftTask.model.js";
 import TemplateShiftTaskList from "./templateShiftTaskList.model.js";
 import TemplateApplication from "./templateApplication.model.js";
 import TemplateApplicationShift from "./templateApplicationShift.model.js";
@@ -52,6 +54,7 @@ db.setting = Setting;
 db.settingValue = SettingValue;
 db.shift = Shift;
 db.shiftAssignment = ShiftAssignment;
+db.shiftTask = ShiftTask;
 db.shiftTaskList = ShiftTaskList;
 db.shiftTaskListStatus = ShiftTaskListStatus;
 db.managerDepartment = ManagerDepartment;
@@ -63,6 +66,7 @@ db.taskList = TaskList;
 db.template                  = Template;
 db.templateShift             = TemplateShift;
 db.templateShiftEmployee     = TemplateShiftEmployee;
+db.templateShiftTask         = TemplateShiftTask;
 db.templateShiftTaskList     = TemplateShiftTaskList;
 db.templateApplication       = TemplateApplication;
 db.templateApplicationShift  = TemplateApplicationShift;
@@ -99,6 +103,22 @@ TemplateShiftTaskList.belongsTo(TemplateShift, {
 TemplateShift.hasMany(TemplateShiftTaskList, {
   foreignKey: { name: "id_templateShift", allowNull: false },
   as: "taskLists",
+});
+
+// TemplateShift → TemplateShiftTask (cascade)
+TemplateShiftTask.belongsTo(TemplateShift, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "templateShift",
+  onDelete: "CASCADE",
+});
+TemplateShift.hasMany(TemplateShiftTask, {
+  foreignKey: { name: "id_templateShift", allowNull: false },
+  as: "tasks",
+});
+TemplateShiftTask.belongsTo(Task, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "task",
+  onDelete: "CASCADE",
 });
 
 // Template → TemplateApplication (cascade)
@@ -276,6 +296,22 @@ ShiftTaskList.belongsTo(TaskList, {
 TaskList.hasMany(ShiftTaskList, {
   foreignKey: { name: "id_taskList", allowNull: false },
   as: "shiftAssignments",
+});
+
+// Shift → ShiftTask (cascade) — individual tasks attached directly to a shift
+ShiftTask.belongsTo(Shift, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shift",
+  onDelete: "CASCADE",
+});
+Shift.hasMany(ShiftTask, {
+  foreignKey: { name: "id_shift", allowNull: false },
+  as: "shiftTasks",
+});
+ShiftTask.belongsTo(Task, {
+  foreignKey: { name: "id_task", allowNull: false },
+  as: "task",
+  onDelete: "CASCADE",
 });
 
 // ShiftTaskListStatus: per-task completion per ShiftTaskList assignment
