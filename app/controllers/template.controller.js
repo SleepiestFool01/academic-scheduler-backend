@@ -4,13 +4,21 @@ const Template = db.template;
 const exports = {};
 
 exports.create = (req, res) => {
-  const { name, description, id_department } = req.body;
+  const { name, description, id_department, durationWeeks, id_semester } = req.body;
 
   if (!name) {
     return res.status(400).send({ message: "Missing required field: name." });
   }
 
-  Template.create({ name, description, id_department: id_department ?? null })
+  const weeks = Number.isFinite(+durationWeeks) && +durationWeeks > 0 ? Math.floor(+durationWeeks) : 1;
+
+  Template.create({
+    name,
+    description,
+    id_department: id_department ?? null,
+    durationWeeks: weeks,
+    id_semester: id_semester || null,
+  })
     .then((data) => res.status(201).send(data))
     .catch((err) =>
       res.status(500).send({ message: err.message || "Error creating Template." })

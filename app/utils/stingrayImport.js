@@ -196,7 +196,13 @@ export function stingrayErrorMessage(err) {
         return "Stingray returned a response the server couldn't parse.";
     }
     if (code === "STINGRAY_LOGICAL") {
-        return err.message || "Stingray reported a failure.";
+        // Stingray rejects off-campus IPs with "Invalid User <ip>". That's
+        // opaque to end-users, so we rewrite it to something actionable.
+        const msg = err.message || "";
+        if (/^\s*invalid user\b/i.test(msg)) {
+            return "For security reasons, you must be on OC's network (or VPN) to sync your class schedule.";
+        }
+        return msg || "Stingray reported a failure.";
     }
     if (code === "BAD_INPUT") {
         return err.message;
