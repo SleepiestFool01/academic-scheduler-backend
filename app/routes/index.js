@@ -33,6 +33,7 @@ import TemplateShiftTaskListRoutes from "./templateShiftTaskList.routes.js";
 import TemplateApplicationRoutes from "./templateApplication.routes.js";
 import TemplateApplicationShiftRoutes from "./templateApplicationShift.routes.js";
 import UserDepartmentPreferencesRoutes from "./userDepartmentPreferences.routes.js";
+import TimeEntryRoutes from "./timeEntry.routes.js";
 
 const router = Router();
 
@@ -69,5 +70,6 @@ router.use("/template-shift-task-lists",  TemplateShiftTaskListRoutes);
 router.use("/template-applications",      TemplateApplicationRoutes);
 router.use("/template-application-shifts", TemplateApplicationShiftRoutes);
 router.use("/user-department-preferences", UserDepartmentPreferencesRoutes);
+router.use("/time-entries", TimeEntryRoutes);
 
 export default router;
